@@ -1,0 +1,23 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "ReadIngestionBucket",
+      "Effect": "Allow",
+      "Action": ["s3:GetObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::gis-poc-ingestion-intelligis",
+        "arn:aws:s3:::gis-poc-ingestion-intelligis/*"
+      ]
+    },
+    {
+      "Sid": "WriteAppBucket",
+      "Effect": "Allow",
+      "Action": ["s3:PutObject", "s3:ListBucket"],
+      "Resource": [
+        "arn:aws:s3:::gis-poc-app-intelligis",
+        "arn:aws:s3:::gis-poc-app-intelligis/*"
+      ]
+    }
+  ]
+}

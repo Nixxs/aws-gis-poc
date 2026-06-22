@@ -1,0 +1,21 @@
+{
+  "jobDefinitionName": "gis-poc-job",
+  "type": "container",
+  "platformCapabilities": ["FARGATE"],
+  "containerProperties": {
+    "image": "878564871075.dkr.ecr.ap-southeast-2.amazonaws.com/gis-poc-pipeline:latest",
+    "executionRoleArn": "arn:aws:iam::878564871075:role/gisPocBatchExecutionRole",
+    "jobRoleArn": "arn:aws:iam::878564871075:role/gisPocBatchJobRole",
+    "networkConfiguration": { "assignPublicIp": "ENABLED" },
+    "resourceRequirements": [
+      { "type": "VCPU", "value": "0.5" },
+      { "type": "MEMORY", "value": "1024" }
+    ],
+    "environment": [
+      { "name": "INGESTION_BUCKET", "value": "gis-poc-ingestion-intelligis" },
+      { "name": "APP_BUCKET", "value": "gis-poc-app-intelligis"},
+      { "name": "SOURCE_PREFIX", "value": "" },
+      { "name": "DEST_PREFIX", "value": "raw/" }
+    ]
+  }
+}
