@@ -1,3 +1,17 @@
+## 0.0 Setup AWS CLI Tools
+
+Before we do anything - make sure you have Docker installed and the AWS CLI tools. Install the AWS CLI tools with this:
+
+`winget install --id Amazon.AWSCLI -e`
+
+Restart VS Code/Terminal then run this to check its working on your machine.
+
+`aws --version`
+
+Then run this to get your ids:
+
+`aws sts get-caller-identity`
+
 ## 1.0 Data Ingestion Pipeline Setup
 
 First job on this is to setup the GIS data ingestion pipeline, this is the S3 ingestion data bucket -> AWS Fargate running a docker container with a python script in it -> S3 Output/App Data bucket. Then later we will setup a lambda to trigger the python script (fargate) execution whenever new data goes into the ingestion bucket.
