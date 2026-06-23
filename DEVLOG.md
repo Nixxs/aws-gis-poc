@@ -221,7 +221,7 @@ aws events put-targets --rule gis-poc-s3-trigger --targets file://targets.json
 
 the `targets.json` tells the rule what to do which is to run the batch job which was setup in 1.4 above.
 
-## Reviewing in AWS Console
+### 2.4 Reviewing in AWS Console
 
 Now this is setup every time a new item is put into the ingestion bucket, the bucket will notify event bridge, the rule will trigger the event and the event will run the AWS batch job "gis-poc-job" which will create the job that spins up the container using fargate compute resources which runs a python script. 
 
@@ -229,3 +229,91 @@ yes, its alot.. but this is the world we live in now. Anyway, you can see event 
 
 ![event bridge](image-4.png)
 ![event bridge rule](image-5.png)
+
+### 2.5 Some Things to consider
+
+If the event bridge rule is triggering the target (ie aws batch job) everytime a new file is created in the bucket, it will run the data processing script for each file in the geodatabase which is incredibly inefficeint. So the event-pattern.json file has been updated to also check that the newly created object in the bucket has a ".complete" at the end of the filename. So the target/batch job only runs once. the work flow would be:
+
+1. upload the new gdb
+2. once the gdb finished uploading, then upload a file called ".complete" to actually trigger the batch job.
+
+yes this is very awkward, why not just have the uploader manually run the batch job by clicking a few things in the AWS console? either that or have it just run the batch on a schedule, we can do that by making a new aws event in event bridge using the same targets.json since its the same job:
+
+```
+cd d:\Development\aws-gis-poc\pipeline\eventbridge
+
+# rate-based: every hour
+aws events put-rule --name gis-poc-schedule --schedule-expression "rate(1 hour)"
+
+# or cron-based: 6 fields, UTC -> e.g. 18:00 UTC daily
+# aws events put-rule --name gis-poc-schedule --schedule-expression "cron(0 18 * * ? *)"
+
+# attach the same Batch target (reuse the targets.json)
+aws events put-targets --rule gis-poc-schedule --targets file://targets.json
+```
+
+this is something the business can consider, we could also make a gui that calls a lambda that then runs the batch job I suppose but would need considerable amount more thought before implementation..
+
+
+# APPENDIX
+
+## Updating the process_data.py 
+
+process_data.py is a python script that lives on the container for the AWS batch job to execute, if you want to update it you must login to the aws container registry first:
+
+1. make your updates
+2. make sure you have docker running on your local machine, make sure you have the aws CLI tools installed and runnning and refer to the .env file for the `$REGION`, `$ACCT` and `$REPO` values
+3. run the below to deploy your processing changes:
+    ```
+    aws ecr get-login-password --region $REGION | docker login --username AWS --password-stdin "$ACCT.dkr.ecr.$REGION.amazonaws.com"
+    docker build -t gis-poc-pipeline .
+    docker tag gis-poc-pipeline:latest "${REPO}:latest"
+    docker push "${REPO}:latest"
+    ```
+
+## Updating the iam policy
+
+The IAM policy files live in `pipeline/iam`. Unlike the container, these are NOT baked into an image - AWS reads them when you run the command, so there is no docker rebuild here. You just re-apply the file and the change is live immediately.
+
+There are two roles we manage:
+- `gisPocBatchJobRole` - the permissions the script itself gets (read/delete ingestion, write app bucket). Defined in `job-role-policy.json`.
+- `gisPocBatchExecutionRole` - lets Fargate pull the image + write logs. Uses an AWS-managed policy, you normally don't touch this.
+
+To update the job role's permissions (eg you added a new S3 action like `s3:DeleteObject`):
+
+1. edit `pipeline/iam/job-role-policy.json`
+2. make sure you have the aws CLI tools installed and running
+3. re-apply the policy with the below. `put-role-policy` OVERWRITES the existing inline policy with the same name, so there's nothing to delete first - just run it again:
+    ```
+    cd d:\Development\aws-gis-poc\pipeline\iam
+    aws iam put-role-policy --role-name gisPocBatchJobRole --policy-name gisPocS3Access --policy-document file://job-role-policy.json
+    ```
+4. the next batch job that runs will use the new permissions, no rebuild/redeploy needed.
+
+NOTE: the above is for the PERMISSIONS policy (what the role can do). If you instead change the TRUST policy (`trust-policy.json` - who is allowed to assume the role), that's a different command:
+```
+aws iam update-assume-role-policy --role-name gisPocBatchJobRole --policy-document file://trust-policy.json
+```
+
+## Updating the eventbridge
+
+The eventbridge files live in `pipeline/eventbridge`. Same as the IAM policy - these are read by AWS when you run the command, so there's no docker rebuild, the change goes live straight away.
+
+There are two parts you might change:
+
+**The rule / event pattern** (`event-pattern.json`) - this is the "what counts as an event" filter (eg the bucket name, or the `.complete` suffix check). After editing it, re-apply the rule. `put-rule` with the same name OVERWRITES the existing rule's pattern, and your targets stay attached to it - so you do NOT need to re-run put-targets:
+```
+cd d:\Development\aws-gis-poc\pipeline\eventbridge
+aws events put-rule --name gis-poc-s3-trigger --event-pattern file://event-pattern.json
+```
+
+**The target** (`targets.json`) - this is the "what do I run when the rule fires" part (the batch queue, the role, the job definition). After editing it, re-apply the targets. `put-targets` OVERWRITES any target with the same `Id`:
+```
+cd d:\Development\aws-gis-poc\pipeline\eventbridge
+aws events put-targets --rule gis-poc-s3-trigger --targets file://targets.json
+```
+
+NOTE: if you ever change the EventBridge role's permissions (`submit-batch-policy.json`), that's an IAM update not an eventbridge one - re-apply it the same way as the job role above:
+```
+aws iam put-role-policy --role-name gisPocEventBridgeRole --policy-name gisPocSubmitBatch --policy-document file://submit-batch-policy.json
+``` 
