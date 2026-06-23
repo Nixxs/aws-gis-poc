@@ -1,0 +1,13 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "batch:SubmitJob",
+      "Resource": [
+        "arn:aws:batch:ap-southeast-2:878564871075:job-queue/gis-poc-queue",
+        "arn:aws:batch:ap-southeast-2:878564871075:job-definition/gis-poc-job"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+[
+  {
+    "Id": "gis-poc-batch-target",
+    "Arn": "arn:aws:batch:ap-southeast-2:878564871075:job-queue/gis-poc-queue",
+    "RoleArn": "arn:aws:iam::878564871075:role/gisPocEventBridgeRole",
+    "BatchParameters": {
+      "JobDefinition": "gis-poc-job",
+      "JobName": "gis-poc-auto"
+    }
+  }
+]

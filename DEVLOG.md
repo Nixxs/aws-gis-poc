@@ -153,10 +153,79 @@ in the previous steps we have completed the below:
 
 Now we just need to run the job to test it we can do that with:
 
-`aws batch submit-job --job-name gis-poc-run1 --job-queue gis-poc-queue --job-definition gis-poc-job`
+```
+aws batch submit-job --job-name gis-poc-run1 --job-queue gis-poc-queue --job-definition gis-poc-job
+```
 
 wath the job going with:
 
-`aws batch list-jobs --job-queue gis-poc-queue --query "jobSummaryList[].[jobName,status]" --output table`
+```
+aws batch list-jobs --job-queue gis-poc-queue --query "jobSummaryList[].[jobName,status]" --output table
+```
 
 or in the AWS Batch console page in your browser and then check S3 app output bucket to see the data. 
+
+## 2.0 Setting up Event Bridge
+
+Event bridge can be used to trigger the AWS Batch job when it detects updates on the ingestion bucket. This section will set it up for this project, first to enable notifications on the ingestion bucket then to run the batch via a rule.
+
+### 2.1 Enable Event Bridge Notifications
+
+The bucket is currently running silently event bridge doesn't know whats going on with it so first we have to enable notifications on the bucket so it starts reporting information to event bridge. 
+
+Run the below to enable notifications on the ingestion bucket:
+
+```
+aws s3api put-bucket-notification-configuration --bucket $ING --notification-configuration '{\"EventBridgeConfiguration\":{}}'
+```
+
+Now all actions on this bucket are now being sent to the account's default event bridge 'bus'. Everything is being sent though, we only care about certain events so next we'll have to filter.
+
+### 2.2 Setting up Roles for Event Bridge to use
+
+First we'll need to setup roles so that event bridge can actually trigger the batch job on AWS Batch.
+
+next we need a role for the event bridge to submit jobs once it notices something important has happened.
+
+```
+cd d:\Development\aws-gis-poc\pipeline\eventbridge
+
+aws iam create-role --role-name gisPocEventBridgeRole --assume-role-policy-document file://trust-policy.json
+```
+
+so this creates a role for the event bridge to use.
+
+```
+aws iam put-role-policy --role-name gisPocEventBridgeRole --policy-name gisPocSubmitBatch --policy-document file://submit-batch-policy.json
+```
+
+then this is what permissions that role has, in this case we are allowing it to submit jobs in aws batch.
+
+### 2.3 Setup the events
+
+Events need to be setup in 2 parts, first is "what do you consider an event" in this case, it's when new objects are created in the ingestion bucket. Then the other half is "ok so once I've detected that specific event what do you want me to do" in this case we are running the AWS Batch process we setup in 1.4.
+
+Setup the rule which tells event bridge what bucket to look at and then what to run once it's detected that a new item was put into it:
+
+```
+aws events put-rule --name gis-poc-s3-trigger --event-pattern file://event-pattern.json
+```
+
+so all events in s3 are showing up on the event bridget default bus, but this rule now specifically looks for "object created" events on that specific "gis-poc-ingestion-intelligis" bucket now. 
+
+When it detects this then it should do something. So do what? well we have to give the rule a target which is what this is below:
+
+```
+aws events put-targets --rule gis-poc-s3-trigger --targets file://targets.json
+```
+
+the `targets.json` tells the rule what to do which is to run the batch job which was setup in 1.4 above.
+
+## Reviewing in AWS Console
+
+Now this is setup every time a new item is put into the ingestion bucket, the bucket will notify event bridge, the rule will trigger the event and the event will run the AWS batch job "gis-poc-job" which will create the job that spins up the container using fargate compute resources which runs a python script. 
+
+yes, its alot.. but this is the world we live in now. Anyway, you can see event bridge gui [here](https://ap-southeast-2.console.aws.amazon.com/events/home?region=ap-southeast-2#/dashboard)
+
+![event bridge](image-4.png)
+![event bridge rule](image-5.png)
