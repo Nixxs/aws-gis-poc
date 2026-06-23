@@ -1,7 +1,7 @@
 # GDAL image with Python bindings already installed.
-# We don't need GDAL for the copy-only step today, but using it now means the
-# image is ready for the GDB -> GeoParquet / GeoTIFF -> COG work next.
-FROM ghcr.io/osgeo/gdal:ubuntu-small-latest
+# Use the "ubuntu-full" variant: it includes the Arrow/Parquet driver that the
+# GeoParquet conversion needs (the "ubuntu-small" image does NOT have it).
+FROM ghcr.io/osgeo/gdal:ubuntu-full-latest
 
 # Add pip so we can install boto3 (the AWS SDK for Python).
 RUN apt-get update \
