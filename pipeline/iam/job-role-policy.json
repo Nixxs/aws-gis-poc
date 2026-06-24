@@ -6,8 +6,8 @@
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:ListBucket", "s3:DeleteObject"],
       "Resource": [
-        "arn:aws:s3:::gis-poc-ingestion-intelligis",
-        "arn:aws:s3:::gis-poc-ingestion-intelligis/*"
+        "arn:aws:s3:::{{ING}}",
+        "arn:aws:s3:::{{ING}}/*"
       ]
     },
     {
@@ -15,8 +15,8 @@
       "Effect": "Allow",
       "Action": ["s3:PutObject", "s3:ListBucket"],
       "Resource": [
-        "arn:aws:s3:::gis-poc-app-intelligis",
-        "arn:aws:s3:::gis-poc-app-intelligis/*"
+        "arn:aws:s3:::{{APP}}",
+        "arn:aws:s3:::{{APP}}/*"
       ]
     }
   ]

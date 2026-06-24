@@ -3,19 +3,20 @@
   "type": "container",
   "platformCapabilities": ["FARGATE"],
   "containerProperties": {
-    "image": "878564871075.dkr.ecr.ap-southeast-2.amazonaws.com/gis-poc-pipeline:latest",
-    "executionRoleArn": "arn:aws:iam::878564871075:role/gisPocBatchExecutionRole",
-    "jobRoleArn": "arn:aws:iam::878564871075:role/gisPocBatchJobRole",
+    "image": "{{REPO}}:latest",
+    "executionRoleArn": "arn:aws:iam::{{ACCT}}:role/gisPocBatchExecutionRole",
+    "jobRoleArn": "arn:aws:iam::{{ACCT}}:role/gisPocBatchJobRole",
     "networkConfiguration": { "assignPublicIp": "ENABLED" },
     "resourceRequirements": [
-      { "type": "VCPU", "value": "0.5" },
-      { "type": "MEMORY", "value": "1024" }
+      { "type": "VCPU", "value": "2" },
+      { "type": "MEMORY", "value": "8192" }
     ],
     "environment": [
-      { "name": "INGESTION_BUCKET", "value": "gis-poc-ingestion-intelligis" },
-      { "name": "APP_BUCKET", "value": "gis-poc-app-intelligis"},
+      { "name": "INGESTION_BUCKET", "value": "{{ING}}" },
+      { "name": "APP_BUCKET", "value": "{{APP}}"},
       { "name": "SOURCE_PREFIX", "value": "" },
-      { "name": "DEST_PREFIX", "value": "raw/" }
+      { "name": "GEOPARQUET_PREFIX", "value": "public/geoparquet/" },
+      { "name": "PMTILES_PREFIX", "value": "public/pmtiles/" }
     ]
   }
 }

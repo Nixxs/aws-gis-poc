@@ -2,7 +2,7 @@
   "source": ["aws.s3"],
   "detail-type": ["Object Created"],
   "detail": {
-    "bucket": { "name": ["gis-poc-ingestion-intelligis"] },
+    "bucket": { "name": ["{{ING}}"] },
     "object": { "key": [{ "suffix": ".complete" }] }
   }
 }

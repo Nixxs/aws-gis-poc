@@ -254,6 +254,13 @@ aws events put-targets --rule gis-poc-schedule --targets file://targets.json
 
 this is something the business can consider, we could also make a gui that calls a lambda that then runs the batch job I suppose but would need considerable amount more thought before implementation..
 
+## Spatial Dataflow
+TODO:
+- GDAL is used to read the geodatabase and output **geoparquets**
+    - no issues here works well and retains source CRS
+- Tippacanoe is used to create **pmtile** files from the geodatabse feature classes
+    - Tippacanoe needs geojson which means the source crs needs to convert from source to 4326 (WGS84) this could be an issue because the source is GDA2020 much more accurate that WGS84.
+    - this process is also resource heavy, so i've had to pump the CPU and memory up on the job definition 
 
 # APPENDIX
 
@@ -317,3 +324,15 @@ NOTE: if you ever change the EventBridge role's permissions (`submit-batch-polic
 ```
 aws iam put-role-policy --role-name gisPocEventBridgeRole --policy-name gisPocSubmitBatch --policy-document file://submit-batch-policy.json
 ``` 
+
+## General Script Driven Deployment
+
+A powershell script has been written in thee `pipeline/deploy.ps1` folder to handle a full deployment of the aws configuration and you can use this to make deploying easier. This way you don't have to think about what you've updated and what needs to be run to get your changes in. This script will just update all the config in an idempotent way (no duplicates, just overwrites)
+
+First, make sure you have docker running and your aws cli is working properly (check 0.0 if not) then run this:
+
+```
+powershell -ExecutionPolicy Bypass -File d:\Development\aws-gis-poc\pipeline\deploy.ps1
+```
+
+Also just make sure to update this deploy.ps1 script if you end up adding more policy or jobs etc.. that need to be updated on deployment.
