@@ -9,6 +9,13 @@ __pycache__/
 # project specific
 data/
 
+# local secrets / config (real account IDs, bucket names) - keep out of git
+.env
+
+# deploy script renders templates here before applying them
+.deploy-tmp/
+pipeline/.deploy-tmp/
+
 # Distribution / packaging
 .Python
 build/
