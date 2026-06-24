@@ -60,7 +60,9 @@ function Render-Template($templatePath) {
         throw "Unresolved token(s) in $templatePath - check your .env has every key the template needs."
     }
     $outPath = Join-Path $tmpDir ([System.IO.Path]::GetFileName($templatePath))
-    Set-Content -Path $outPath -Value $content -NoNewline -Encoding utf8
+    # Write UTF-8 WITHOUT a BOM. Windows PowerShell 5.1's "-Encoding utf8" adds a
+    # BOM, which AWS rejects (MalformedPolicyDocument / "Syntax errors in policy").
+    [System.IO.File]::WriteAllText($outPath, $content, (New-Object System.Text.UTF8Encoding($false)))
     return "file://" + ($outPath -replace '\\', '/')
 }
 
@@ -93,7 +95,7 @@ Write-Host "Deploying with ACCT=$($cfg.ACCT) REGION=$($cfg.REGION)" -ForegroundC
 
 # --- 1. Docker image -> ECR ------------------------------------------------
 
-Write-Host "==> 1/5 Building and pushing Docker image" -ForegroundColor Cyan
+Write-Host "==> 1/6 Building and pushing Docker image" -ForegroundColor Cyan
 $registry = "$($cfg.ACCT).dkr.ecr.$($cfg.REGION).amazonaws.com"
 aws ecr get-login-password --region $cfg.REGION | docker login --username AWS --password-stdin $registry
 if ($LASTEXITCODE -ne 0) { throw "ECR docker login failed" }
@@ -105,7 +107,7 @@ if ($LASTEXITCODE -ne 0) { throw "docker push failed" }
 
 # --- 2. IAM roles + policies ----------------------------------------------
 
-Write-Host "==> 2/5 Ensuring IAM roles and policies" -ForegroundColor Cyan
+Write-Host "==> 2/6 Ensuring IAM roles and policies" -ForegroundColor Cyan
 $batchTrust = File-Uri (Join-Path $iamDir "trust-policy.json")
 $ebTrust    = File-Uri (Join-Path $ebDir  "trust-policy.json")
 
@@ -126,7 +128,7 @@ Invoke-AWS iam put-role-policy --role-name gisPocEventBridgeRole `
 
 # --- 3. Batch compute environment + job queue (create if missing) ---------
 
-Write-Host "==> 3/5 Ensuring Batch compute environment and job queue" -ForegroundColor Cyan
+Write-Host "==> 3/6 Ensuring Batch compute environment and job queue" -ForegroundColor Cyan
 $ceCount = aws batch describe-compute-environments --compute-environments gis-poc-ce `
     --query "length(computeEnvironments)" --output text 2>$null
 if ($ceCount -ne "1") {
@@ -160,12 +162,25 @@ if ($qCount -ne "1") {
 
 # --- 4. Batch job definition (new revision each run) ----------------------
 
-Write-Host "==> 4/5 Registering Batch job definition" -ForegroundColor Cyan
+Write-Host "==> 4/6 Registering Batch job definition" -ForegroundColor Cyan
 Invoke-AWS batch register-job-definition --cli-input-json (Render-Template (Join-Path $batchDir "job-definition.json"))
 
-# --- 5. S3 notifications + EventBridge rule + target ----------------------
+# --- 5. Make the app bucket's public/ prefix publicly readable -------------
 
-Write-Host "==> 5/5 Configuring S3 notifications and EventBridge rule" -ForegroundColor Cyan
+Write-Host "==> 5/6 Configuring public read access on app bucket" -ForegroundColor Cyan
+# Allow a public bucket policy (keep ACLs blocked - we use a bucket policy, not ACLs).
+Invoke-AWS s3api put-public-access-block --bucket $cfg.APP `
+    --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=false,RestrictPublicBuckets=false"
+# Grant anonymous s3:GetObject on the public/ prefix only.
+Invoke-AWS s3api put-bucket-policy --bucket $cfg.APP `
+    --policy (Render-Template (Join-Path $iamDir "app-bucket-public-policy.json"))
+# CORS so browser map clients can fetch PMTiles via HTTP range requests.
+Invoke-AWS s3api put-bucket-cors --bucket $cfg.APP `
+    --cors-configuration (File-Uri (Join-Path $iamDir "app-bucket-cors.json"))
+
+# --- 6. S3 notifications + EventBridge rule + target ----------------------
+
+Write-Host "==> 6/6 Configuring S3 notifications and EventBridge rule" -ForegroundColor Cyan
 Invoke-AWS s3api put-bucket-notification-configuration --bucket $cfg.ING `
     --notification-configuration (File-Uri (Join-Path $ebDir "bucket-notification.json"))
 Invoke-AWS events put-rule --name gis-poc-s3-trigger `

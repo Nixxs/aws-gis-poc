@@ -8,14 +8,15 @@
     "jobRoleArn": "arn:aws:iam::{{ACCT}}:role/gisPocBatchJobRole",
     "networkConfiguration": { "assignPublicIp": "ENABLED" },
     "resourceRequirements": [
-      { "type": "VCPU", "value": "0.5" },
-      { "type": "MEMORY", "value": "1024" }
+      { "type": "VCPU", "value": "2" },
+      { "type": "MEMORY", "value": "8192" }
     ],
     "environment": [
       { "name": "INGESTION_BUCKET", "value": "{{ING}}" },
       { "name": "APP_BUCKET", "value": "{{APP}}"},
       { "name": "SOURCE_PREFIX", "value": "" },
-      { "name": "DEST_PREFIX", "value": "raw/" }
+      { "name": "GEOPARQUET_PREFIX", "value": "public/geoparquet/" },
+      { "name": "PMTILES_PREFIX", "value": "public/pmtiles/" }
     ]
   }
 }

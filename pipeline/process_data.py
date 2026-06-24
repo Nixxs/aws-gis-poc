@@ -1,31 +1,41 @@
-"""POC data pipeline - File Geodatabase -> GeoParquet.
+"""POC data pipeline - File Geodatabase -> GeoParquet + PMTiles.
 
 This runs inside the AWS Batch (Fargate) container. It:
   1. Downloads the contents of the ingestion bucket to local disk.
   2. Finds any File Geodatabase (.gdb) in what was downloaded.
   3. Reads every feature class (a layer that has geometry) in each .gdb.
   4. Converts each feature class to a GeoParquet file using GDAL.
-  5. Uploads the GeoParquet files to the application bucket.
-  6. Optionally deletes the processed source objects from the ingestion bucket.
+  5. Converts each feature class to a PMTiles vector tileset using tippecanoe.
+  6. Uploads the GeoParquet and PMTiles files to the application bucket.
+  7. Optionally deletes the processed source objects from the ingestion bucket.
 
-Requires a GDAL build with the Parquet driver (the osgeo/gdal "ubuntu-full" image).
+Requires a GDAL build with the Parquet driver and the tippecanoe binary on PATH
+(both provided by this project's Dockerfile, built on osgeo/gdal "ubuntu-full").
 
 Configuration comes from environment variables (set on the Batch job):
     INGESTION_BUCKET           (required)  source S3 bucket (where the .gdb is uploaded)
     APP_BUCKET                 (required)  destination S3 bucket
     SOURCE_PREFIX              (optional)  only process objects under this prefix (default: "")
-    DEST_PREFIX                (optional)  prefix to write GeoParquet under (default: "geoparquet/")
+    GEOPARQUET_PREFIX          (optional)  prefix to write GeoParquet under (default: "geoparquet/")
+    PMTILES_PREFIX             (optional)  prefix to write PMTiles under (default: "pmtiles/")
+    MAKE_PMTILES               (optional)  "true"/"false" - generate PMTiles too (default: "true")
+    TIPPECANOE_ARGS            (optional)  extra tippecanoe flags (default: see below)
     DELETE_SOURCE_AFTER_COPY   (optional)  "true"/"false" - delete processed source objects from the
                                            ingestion bucket once conversion succeeds (default: "true")
 """
 
 import logging
 import os
+import subprocess
 import sys
 import tempfile
 
 import boto3
 from osgeo import gdal, ogr
+
+# Default tippecanoe flags: guess a sensible zoom range and thin dense areas so
+# the tileset stays a reasonable size. Override with the TIPPECANOE_ARGS env var.
+DEFAULT_TIPPECANOE_ARGS = "-zg --drop-densest-as-needed --extend-zooms-if-still-dropping"
 
 # Make GDAL raise Python exceptions on error instead of returning None silently.
 gdal.UseExceptions()
@@ -116,11 +126,44 @@ def convert_layer_to_parquet(gdb_path: str, layer_name: str, out_path: str) -> N
     )
 
 
+def convert_layer_to_geojson(gdb_path: str, layer_name: str, out_path: str) -> None:
+    """Export a feature class to GeoJSON in EPSG:4326 (what tippecanoe expects)."""
+    gdal.VectorTranslate(
+        out_path,
+        gdb_path,
+        options=gdal.VectorTranslateOptions(
+            format="GeoJSON",
+            layers=[layer_name],
+            dstSRS="EPSG:4326",
+            reproject=True,
+        ),
+    )
+
+
+def convert_geojson_to_pmtiles(
+    geojson_path: str, layer_name: str, out_path: str, extra_args: list
+) -> None:
+    """Build a PMTiles vector tileset from GeoJSON using tippecanoe."""
+    cmd = [
+        "tippecanoe",
+        "-o", out_path,
+        "-l", layer_name,
+        "--force",
+        *extra_args,
+        geojson_path,
+    ]
+    log.info("Running tippecanoe: %s", " ".join(cmd))
+    subprocess.run(cmd, check=True)
+
+
 def main() -> None:
     ingestion_bucket = get_env("INGESTION_BUCKET", required=True)
     app_bucket = get_env("APP_BUCKET", required=True)
     source_prefix = get_env("SOURCE_PREFIX", default="")
-    dest_prefix = get_env("DEST_PREFIX", default="geoparquet/")
+    geoparquet_prefix = get_env("GEOPARQUET_PREFIX", default="geoparquet/")
+    pmtiles_prefix = get_env("PMTILES_PREFIX", default="pmtiles/")
+    make_pmtiles = get_env("MAKE_PMTILES", default="true").lower() == "true"
+    tippecanoe_args = get_env("TIPPECANOE_ARGS", default=DEFAULT_TIPPECANOE_ARGS).split()
     delete_after_copy = get_env("DELETE_SOURCE_AFTER_COPY", default="true").lower() == "true"
 
     s3 = boto3.client("s3")
@@ -164,16 +207,35 @@ def main() -> None:
             log.info("Converting feature class '%s' -> GeoParquet", fc)
             convert_layer_to_parquet(gdb_path, fc, out_path)
 
-            dest_key = f"{dest_prefix}{gdb_stem}/{fc}.parquet"
-            log.info("Uploading -> s3://%s/%s", app_bucket, dest_key)
-            s3.upload_file(out_path, app_bucket, dest_key)
+            parquet_key = f"{geoparquet_prefix}{fc}.parquet"
+            log.info("Uploading -> s3://%s/%s", app_bucket, parquet_key)
+            s3.upload_file(out_path, app_bucket, parquet_key)
             uploaded += 1
+
+            if make_pmtiles:
+                geojson_path = os.path.join(out_dir, f"{gdb_stem}__{fc}.geojson")
+                log.info("Exporting feature class '%s' -> GeoJSON (EPSG:4326)", fc)
+                convert_layer_to_geojson(gdb_path, fc, geojson_path)
+
+                pmtiles_path = os.path.join(out_dir, f"{gdb_stem}__{fc}.pmtiles")
+                log.info("Converting feature class '%s' -> PMTiles", fc)
+                convert_geojson_to_pmtiles(geojson_path, fc, pmtiles_path, tippecanoe_args)
+
+                pm_key = f"{pmtiles_prefix}{fc}.pmtiles"
+                log.info("Uploading -> s3://%s/%s", app_bucket, pm_key)
+                s3.upload_file(
+                    pmtiles_path,
+                    app_bucket,
+                    pm_key,
+                    ExtraArgs={"ContentType": "application/vnd.pmtiles"},
+                )
+                uploaded += 1
 
     if uploaded == 0:
         log.warning("No feature classes were converted.")
         return
 
-    log.info("Done. Wrote %d GeoParquet file(s) to s3://%s/%s", uploaded, app_bucket, dest_prefix)
+    log.info("Done. Wrote %d output file(s) to s3://%s", uploaded, app_bucket)
 
     # Only reached if every conversion + upload above succeeded (any failure
     # raises and fails the job first), so it is safe to remove the sources now.
