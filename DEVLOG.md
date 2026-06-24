@@ -327,7 +327,7 @@ aws iam put-role-policy --role-name gisPocEventBridgeRole --policy-name gisPocSu
 
 ## General Script Driven Deployment
 
-A powershell script has been written in thee `/batch/deploy.ps1` folder to handle a full deployment of the aws configuration and you can use this to make deploying easier. This way you don't have to think about what you've updated and what needs to be run to get your changes in. This script will just update all the config in an idempotent way (no duplicates, just overwrites)
+A powershell script has been written in thee `pipeline/deploy.ps1` folder to handle a full deployment of the aws configuration and you can use this to make deploying easier. This way you don't have to think about what you've updated and what needs to be run to get your changes in. This script will just update all the config in an idempotent way (no duplicates, just overwrites)
 
 First, make sure you have docker running and your aws cli is working properly (check 0.0 if not) then run this:
 
