@@ -345,7 +345,6 @@ in this case, the parquet files are stored in the S3 bucket and DuckDB can read 
 
 The `/lambda/build_install_extensions.py` file is executed by docker when the container hosting the lambda code and duckdb is spun up. this file will install the required extension for DuckDB to use giving it access to the aws s3 bucket.
 
-
 ### 3.X Deploying/updating the deployed the lambda
 
 There is a deployment script setup to deploy the lambda which will read the lambda/iam/*.json policy and cors files to run the deployment.

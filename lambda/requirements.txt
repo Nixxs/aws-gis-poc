@@ -3,3 +3,7 @@ boto3>=1.34
 
 # DuckDB reads parquet directly from S3 for describe-layer / query.
 duckdb>=1.1
+
+# DuckDB needs pytz to convert TIMESTAMP WITH TIME ZONE values when fetching
+# query rows into Python (otherwise: "Required module 'pytz' failed to import").
+pytz>=2024.1

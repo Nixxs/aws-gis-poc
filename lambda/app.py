@@ -3,8 +3,8 @@ GeoParquet layers the pipeline writes to the app bucket.
 
 It uses an "action" router so one Lambda can serve every query type:
     action=list-layers       -> names of the layers available to query
-    action=describe-layer     -> a layer's column schema        (stub)
-    action=query              -> rows from a layer with filters  (stub)
+    action=describe-layer     -> a layer's column schema
+    action=query              -> rows from a layer with an Esri-style filter
 
 The handler reads the API Gateway / Lambda Function URL "v2.0" event shape, so
 this exact function can sit behind a Function URL now and an API Gateway HTTP
@@ -49,6 +49,25 @@ def get_param(event: dict, name: str, default=None):
     return default
 
 
+def all_params(event: dict) -> dict:
+    """Merge JSON-body params (POST) with query-string params (GET).
+
+    Query-string values win on conflict. Used by the query action, which has a
+    larger, Esri-style parameter set than the simpler routes.
+    """
+    params = {}
+    body = event.get("body")
+    if body:
+        try:
+            data = json.loads(body)
+            if isinstance(data, dict):
+                params.update(data)
+        except (ValueError, TypeError):
+            pass
+    params.update(event.get("queryStringParameters") or {})
+    return params
+
+
 def handler(event, context):
     method = event.get("requestContext", {}).get("http", {}).get("method", "GET")
     if method == "OPTIONS":  # CORS preflight
@@ -69,7 +88,7 @@ def handler(event, context):
 
         if action == "query":
             from queries.query_layer import query_layer
-            return _response(200, query_layer(event, APP_BUCKET, GEOPARQUET_PREFIX))
+            return _response(200, query_layer(all_params(event), APP_BUCKET, GEOPARQUET_PREFIX))
 
         return _response(400, {
             "error": f"unknown or missing action: {action!r}",
