@@ -75,6 +75,8 @@ def handler(event, context):
             "error": f"unknown or missing action: {action!r}",
             "actions": ["list-layers", "describe-layer", "query"],
         })
+    except ValueError as exc:  # bad/missing parameters -> client error
+        return _response(400, {"error": str(exc)})
     except NotImplementedError as exc:
         return _response(501, {"error": str(exc)})
     except Exception as exc:  # noqa: BLE001 - surface a clean error to the caller

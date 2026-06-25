@@ -256,6 +256,8 @@ this is something the business can consider, we could also make a gui that calls
 
 ## 3.0 Spatial Query API - AWS Lambda
 
+### 3.1 Lambda Container Environment
+
 AWS Lambda is used as the backend via function urls, it works by building a docker container for an app.py to live inside of. The Docker image (`/lambda/dockerfile`) is built on the lambda runtime interface client (RIC) which has everything it needs to handle lambda. 
 
 The only thing it doesn't know about is what function to call, so in the dockerfile we define it like this:
@@ -264,9 +266,11 @@ The only thing it doesn't know about is what function to call, so in the dockerf
 CMD ["app.handler"]
 ```
 
-this is the entry point for the lambda, then in the `app.py` there are functions that lambda knows to call a function in the app.py called `handler(event, context)` whenever a request comes in.  
+this is the entry point for the lambda, then in the `app.py` lambda knows to call a function in the app.py called `handler(event, context)` whenever a request comes in.  
 
-In this handler call, aws will give handler an `event` which gives you information about the incomming http request you get the below for a **get** request: 
+### 3.2 What does AWS give the request handler?
+
+In the handler call, aws will give the handler an `event` which gives you information about the incomming http request you get the below for a **get** request: 
 
 ```
 {
@@ -308,6 +312,8 @@ AWS also ships off the "handlers" return - which needs to be a python dict descr
 
 other than this you can write your code however you want, in this poroject we have the lambda/queries/whatever.py to do actual work.
 
+### 3.3 Required Permissions and IAM Policies
+
 Outside of this, lambda also needs a role to run under and permissions on whatver it needs to access. These are defined here:
 
 `lambda/iam/role-policy.json` and `lambda/iam/trust-policy.json`
@@ -317,6 +323,34 @@ finally, lambda also needs to have CORS rules defined so that the front-end can 
 `lambda/iam/function-url-cors.json`
 
 finally, to bring it all together there is a `/lambda/deploy.ps1` script that can be run to idempotently deploy the required policy and docker image to AWS IAM and AWS Lambda. 
+
+### 3.4 Duckdb and Spatial Queries on Parquet Files
+
+Dockdb is our spatial "database" but it is not something you "host" like postgres. There is no DuckDB server, instead you just import it and it's just part of the application/lambda runtime.
+
+```python
+import duckdb
+
+con = duckdb.connect()
+result = con.execute("""
+    SELECT *
+    FROM read_parquet('/tmp/input.parquet')
+    WHERE area > 1000
+""").fetchdf()
+```
+
+### 3.4.1 DuckDB Direct Access to S3 Hosted Parquets
+
+in this case, the parquet files are stored in the S3 bucket and DuckDB can read from there as well but to do this, duckdb needs to have a "httpfs" and "aws" extention installed.
+
+The `/lambda/build_install_extensions.py` file is executed by docker when the container hosting the lambda code and duckdb is spun up. this file will install the required extension for DuckDB to use giving it access to the aws s3 bucket.
+
+
+### 3.X Deploying/updating the deployed the lambda
+
+There is a deployment script setup to deploy the lambda which will read the lambda/iam/*.json policy and cors files to run the deployment.
+
+the /lambda/deploy.ps1 file will run the required aws cli commands to handle the deployment and update of the lambda whenever you need to deploy updates and it will do this idempotently.
 
 
 ## X.X Spatial Dataflow
