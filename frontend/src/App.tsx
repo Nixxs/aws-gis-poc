@@ -1,35 +1,54 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Box, AppBar, Toolbar, Typography, Drawer } from '@mui/material'
+import MapIcon from '@mui/icons-material/Map'
+import MapContainer from './MapContainer'
 
-function App() {
-  const [count, setCount] = useState(0)
+const DRAWER_WIDTH = 340
 
+export default function App() {
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Box sx={
+            { 
+                display: 'flex', 
+                flexDirection: 'row',
+                height: '100vh', 
+                overflow: 'hidden' 
+            }
+        }
+    >
+      {/* Top bar — sits above everything (zIndex bumped over the drawer) */}
+      <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
+        <Toolbar variant="dense">
+          <MapIcon sx={{ mr: 1 }} />
+          <Typography variant="h6" noWrap>
+            AWS GIS POC
+          </Typography>
+        </Toolbar>
+      </AppBar>
+
+      {/* Left sidebar — permanent, fixed width */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          width: DRAWER_WIDTH,
+          flexShrink: 0,
+          '& .MuiDrawer-paper': { width: DRAWER_WIDTH, boxSizing: 'border-box' },
+        }}
+      >
+        <Toolbar variant="dense" />{/* spacer so content starts below the AppBar */}
+        <Box sx={{ overflow: 'auto', p: 2 }}>
+          <Typography variant="body2" color="text.secondary">
+            Sidebar — modules go here
+          </Typography>
+        </Box>
+      </Drawer>
+
+      {/* Main content area — where the map will live */}
+      <Box component="main" sx={{ flexGrow: 1, position: 'relative' }}>
+        <Toolbar variant="dense" />{/* spacer under the AppBar */}
+        <Box sx={{ position: 'absolute', inset: 0, top: 48 }}>
+            <MapContainer />
+        </Box>
+      </Box>
+    </Box>
   )
 }
-
-export default App
