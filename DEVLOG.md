@@ -339,6 +339,27 @@ result = con.execute("""
 """).fetchdf()
 ```
 
+### 3.5 Local Dev Env Container
+
+Sometimes you might be working on a query and need to quickly test changes without having to deploy it. In this case make sure you have docker running locally and run the `/lambda/deploy.ps1` script. This will deploy a lambda emulator into a container with this application's lambda endpoints in it which will allow you test locally.
+
+Then emulator however, requires input lightly differently to the normal prod deployment, everything needs to be a post request (despite prod version of the endpoint allowing get) but you descrip the request context in the body example:
+
+URL: `http://localhost:9000/2015-03-31/functions/function/invocations`
+
+```
+{
+  "requestContext": { "http": { "method": "POST" } },
+  "queryStringParameters": { "action": "query" },
+  "body": "{\"layer\":\"au_vic_dtp_env_environmental_significance\",\"resultRecordCount\":5}"
+}
+```
+
+The URL is also always that one above, this is outlined in the AWS lambda local dev environment emulator docs:
+
+[aws-lambda-runtime-interface-emulator](https://github.com/aws/aws-lambda-runtime-interface-emulator)
+
+
 ### 3.4.1 DuckDB Direct Access to S3 Hosted Parquets
 
 in this case, the parquet files are stored in the S3 bucket and DuckDB can read from there as well but to do this, duckdb needs to have a "httpfs" and "aws" extention installed.
