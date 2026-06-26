@@ -1,0 +1,39 @@
+{
+  "layers": [
+    {
+      "id": "au_vic_dtp_planning_scheme_all",
+      "label": "Planning Scheme",
+      "visibleByDefault": true,
+      "opacity": 0.4,
+      "color": "#1976d2"
+    },
+    {
+      "id": "au_vic_dtp_env_environmental_significance",
+      "label": "Environmental Significance",
+      "visibleByDefault": false,
+      "opacity": 0.4,
+      "color": "#2e7d32"
+    },
+    {
+      "id": "au_vic_dtp_env_significant_landscape",
+      "label": "Significant Landscape",
+      "visibleByDefault": false,
+      "opacity": 0.4,
+      "color": "#00838f"
+    },
+    {
+      "id": "au_vic_dtp_env_vegetation_protection",
+      "label": "Vegetation Protection",
+      "visibleByDefault": false,
+      "opacity": 0.4,
+      "color": "#558b2f"
+    },
+    {
+      "id": "au_vic_dtp_parcel",
+      "label": "Parcels",
+      "visibleByDefault": true,
+      "opacity": 0.15,
+      "color": "#ef6c00"
+    }
+  ]
+}
