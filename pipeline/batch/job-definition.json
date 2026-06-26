@@ -7,6 +7,7 @@
     "executionRoleArn": "arn:aws:iam::{{ACCT}}:role/gisPocBatchExecutionRole",
     "jobRoleArn": "arn:aws:iam::{{ACCT}}:role/gisPocBatchJobRole",
     "networkConfiguration": { "assignPublicIp": "ENABLED" },
+    "ephemeralStorage": { "sizeInGiB": 200 },
     "resourceRequirements": [
       { "type": "VCPU", "value": "2" },
       { "type": "MEMORY", "value": "8192" }
@@ -16,7 +17,8 @@
       { "name": "APP_BUCKET", "value": "{{APP}}"},
       { "name": "SOURCE_PREFIX", "value": "" },
       { "name": "GEOPARQUET_PREFIX", "value": "public/geoparquet/" },
-      { "name": "PMTILES_PREFIX", "value": "public/pmtiles/" }
+      { "name": "PMTILES_PREFIX", "value": "public/pmtiles/" },
+      { "name": "TMPDIR", "value": "/tmp" }
     ]
   }
 }
