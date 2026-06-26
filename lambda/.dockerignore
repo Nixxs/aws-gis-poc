@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.deploy-tmp/
+iam/
+deploy.ps1
+*.md

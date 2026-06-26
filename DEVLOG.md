@@ -254,7 +254,105 @@ aws events put-targets --rule gis-poc-schedule --targets file://targets.json
 
 this is something the business can consider, we could also make a gui that calls a lambda that then runs the batch job I suppose but would need considerable amount more thought before implementation..
 
-## Spatial Dataflow
+## 3.0 Spatial Query API - AWS Lambda
+
+### 3.1 Lambda Container Environment
+
+AWS Lambda is used as the backend via function urls, it works by building a docker container for an app.py to live inside of. The Docker image (`/lambda/dockerfile`) is built on the lambda runtime interface client (RIC) which has everything it needs to handle lambda. 
+
+The only thing it doesn't know about is what function to call, so in the dockerfile we define it like this:
+
+```
+CMD ["app.handler"]
+```
+
+this is the entry point for the lambda, then in the `app.py` lambda knows to call a function in the app.py called `handler(event, context)` whenever a request comes in.  
+
+### 3.2 What does AWS give the request handler?
+
+In the handler call, aws will give the handler an `event` which gives you information about the incomming http request you get the below for a **get** request: 
+
+```
+{
+  "version": "2.0",
+  "routeKey": "$default",
+  "rawPath": "/",
+  "rawQueryString": "action=list-layers",
+  "headers": { "content-type": "application/json", "user-agent": "curl/8.0", ... },
+  "queryStringParameters": { "action": "list-layers" },
+  "requestContext": {
+    "http": { "method": "GET", "path": "/", "sourceIp": "1.2.3.4", ... },
+    "domainName": "abc123.lambda-url.ap-southeast-2.on.aws"
+  },
+  "body": null,
+  "isBase64Encoded": false
+}
+```
+
+then you have context as well whcih gives you runtime metadata, this is a lambdacontext object not a dict. It tells you about lambda environment things like "aws_request_id" or the time remaining before the lambda runs out of time to run
+
+| Attribute                                            | What it is                                                                            |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `context.aws_request_id`                             | Unique ID for this invocation — great to log for tracing                              |
+| `context.get_remaining_time_in_millis()`             | Milliseconds left before your timeout — useful to bail out of long queries gracefully |
+| `context.function_name` / `context.function_version` | Identifies the Lambda function and version currently running                          |
+| `context.memory_limit_in_mb`                         | Configured memory limit for the function                                              |
+| `context.log_group_name` / `context.log_stream_name` | Where your logs go in CloudWatch                                                      |
+| `context.invoked_function_arn`                       | Full ARN of the invoked Lambda function                                               |
+
+AWS also ships off the "handlers" return - which needs to be a python dict describing the http response. it needs to look like this:
+
+```
+{
+  "statusCode": 200,
+  "headers": { "Content-Type": "application/json", ... },
+  "body": "{\"layers\": [...]}"   # MUST be a string
+}
+```
+
+other than this you can write your code however you want, in this poroject we have the lambda/queries/whatever.py to do actual work.
+
+### 3.3 Required Permissions and IAM Policies
+
+Outside of this, lambda also needs a role to run under and permissions on whatver it needs to access. These are defined here:
+
+`lambda/iam/role-policy.json` and `lambda/iam/trust-policy.json`
+
+finally, lambda also needs to have CORS rules defined so that the front-end can call it, this is defined here:
+
+`lambda/iam/function-url-cors.json`
+
+finally, to bring it all together there is a `/lambda/deploy.ps1` script that can be run to idempotently deploy the required policy and docker image to AWS IAM and AWS Lambda. 
+
+### 3.4 Duckdb and Spatial Queries on Parquet Files
+
+Dockdb is our spatial "database" but it is not something you "host" like postgres. There is no DuckDB server, instead you just import it and it's just part of the application/lambda runtime.
+
+```python
+import duckdb
+
+con = duckdb.connect()
+result = con.execute("""
+    SELECT *
+    FROM read_parquet('/tmp/input.parquet')
+    WHERE area > 1000
+""").fetchdf()
+```
+
+### 3.4.1 DuckDB Direct Access to S3 Hosted Parquets
+
+in this case, the parquet files are stored in the S3 bucket and DuckDB can read from there as well but to do this, duckdb needs to have a "httpfs" and "aws" extention installed.
+
+The `/lambda/build_install_extensions.py` file is executed by docker when the container hosting the lambda code and duckdb is spun up. this file will install the required extension for DuckDB to use giving it access to the aws s3 bucket.
+
+### 3.X Deploying/updating the deployed the lambda
+
+There is a deployment script setup to deploy the lambda which will read the lambda/iam/*.json policy and cors files to run the deployment.
+
+the /lambda/deploy.ps1 file will run the required aws cli commands to handle the deployment and update of the lambda whenever you need to deploy updates and it will do this idempotently.
+
+
+## X.X Spatial Dataflow
 TODO:
 - GDAL is used to read the geodatabase and output **geoparquets**
     - no issues here works well and retains source CRS
