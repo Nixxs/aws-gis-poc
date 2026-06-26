@@ -10,7 +10,12 @@ so the parameters are familiar to GIS clients:
     resultOffset       skip N rows (default 0)
     resultRecordCount  page size, clamped to MAX_RECORD_COUNT
     returnCountOnly    "true" -> {"count": N} fast path
-    f                  json (default). geojson/geometry output is phase 2.
+    f                  "json" (default, attributes only) or "geojson"
+    returnGeometry     "true" also forces geometry output (GeoJSON)
+
+For f=geojson the response is a GeoJSON FeatureCollection: each feature's
+attributes become ``properties`` and the layer's geometry column is converted to
+GeoJSON via the spatial extension (ST_AsGeoJSON), ready to drop onto a map.
 
 Security model ("standardized queries", lite): the only place raw user SQL
 lands is ``where``, which we inject as ``WHERE (<where>)``. We harden it the way
@@ -30,6 +35,7 @@ filter builder instead.
 
 import datetime
 import decimal
+import json
 
 import duckdb
 
@@ -141,16 +147,14 @@ def query_layer(params: dict, bucket: str, prefix: str):
     validate_layer(bucket, prefix, layer)
 
     fmt = (params.get("f") or "json").lower()
-    if fmt == "geojson" or _truthy(params.get("returnGeometry")):
-        raise NotImplementedError(
-            "geometry output (f=geojson / returnGeometry) is not implemented yet"
-        )
-    if fmt != "json":
-        raise ValueError(f"unsupported format: {fmt!r} (use 'json')")
+    if fmt not in ("json", "geojson"):
+        raise ValueError(f"unsupported format: {fmt!r} (use 'json' or 'geojson')")
+    want_geometry = fmt == "geojson" or _truthy(params.get("returnGeometry"))
 
     columns = layer_columns(bucket, prefix, layer)
     all_names = [c["name"] for c in columns]
     attribute_names = [c["name"] for c in columns if not c["is_geometry"]]
+    geometry_cols = [c for c in columns if c["is_geometry"]]
 
     uri = s3_uri(bucket, prefix, layer)
     con = connection()
@@ -169,14 +173,21 @@ def query_layer(params: dict, bucket: str, prefix: str):
         return {"layer": layer, "count": count}
 
     fields = _select_fields(params.get("outFields"), attribute_names)
-    select_list = ", ".join(f'"{f}"' for f in fields)
     order_sql = _order_by_clause(params.get("orderByFields"), all_names)
-
     limit = _clamp_int(
         params.get("resultRecordCount"), DEFAULT_RECORD_COUNT, 1, MAX_RECORD_COUNT
     )
     offset = _clamp_int(params.get("resultOffset"), 0, 0)
 
+    if want_geometry:
+        if not geometry_cols:
+            raise ValueError(f"layer {layer!r} has no geometry column")
+        return _query_geojson(
+            con, uri, layer, fields, geometry_cols[0],
+            where_sql, order_sql, limit, offset,
+        )
+
+    select_list = ", ".join(f'"{f}"' for f in fields)
     sql = (
         f"SELECT {select_list} FROM read_parquet('{uri}')"
         f"{where_sql}{order_sql} LIMIT {limit} OFFSET {offset}"
@@ -196,4 +207,52 @@ def query_layer(params: dict, bucket: str, prefix: str):
         "resultRecordCount": limit,
         "fields": fields,
         "features": features,
+    }
+
+
+def _geometry_expr(name: str, col_type: str) -> str:
+    """SQL that turns the geometry column into a GeoJSON string.
+
+    GeoParquet geometry surfaces either as a native DuckDB GEOMETRY (when the
+    spatial extension recognises it) or as raw WKB bytes (BLOB); handle both.
+    Coordinates are emitted as stored - this data is GDA2020, which is within a
+    couple of metres of WGS84, so web maps can treat it as EPSG:4326 directly.
+    """
+    if col_type.upper().startswith("GEOMETRY"):
+        return f'ST_AsGeoJSON("{name}")'
+    return f'ST_AsGeoJSON(ST_GeomFromWKB("{name}"))'
+
+
+def _query_geojson(con, uri, layer, fields, geom_col, where_sql, order_sql, limit, offset):
+    """Return a GeoJSON FeatureCollection (attributes as properties + geometry)."""
+    geom_expr = _geometry_expr(geom_col["name"], geom_col["type"])
+    select_list = ", ".join(f'"{f}"' for f in fields)
+    if select_list:
+        select_list += ", "
+    sql = (
+        f"SELECT {select_list}{geom_expr} AS __geojson "
+        f"FROM read_parquet('{uri}')"
+        f"{where_sql}{order_sql} LIMIT {limit} OFFSET {offset}"
+    )
+
+    cursor = _run(con, sql)
+    col_names = [d[0] for d in cursor.description]
+    features = []
+    for record in cursor.fetchall():
+        row = dict(zip(col_names, record))
+        geom_raw = row.pop("__geojson", None)
+        geometry = json.loads(geom_raw) if geom_raw else None
+        properties = {k: _jsonable(v) for k, v in row.items()}
+        features.append(
+            {"type": "Feature", "geometry": geometry, "properties": properties}
+        )
+
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+        # Non-standard extras the client can ignore; handy for paging/debugging.
+        "layer": layer,
+        "count": len(features),
+        "resultOffset": offset,
+        "resultRecordCount": limit,
     }

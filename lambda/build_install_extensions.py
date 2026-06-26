@@ -14,8 +14,8 @@ os.makedirs(ext_dir, exist_ok=True)
 
 con = duckdb.connect()
 con.execute(f"SET extension_directory='{ext_dir}'")
-for ext in ("httpfs", "aws"):
+for ext in ("httpfs", "aws", "spatial"):
     con.execute(f"INSTALL {ext}")
 con.close()
 
-print(f"installed duckdb extensions (httpfs, aws) into {ext_dir}")
+print(f"installed duckdb extensions (httpfs, aws, spatial) into {ext_dir}")

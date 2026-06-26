@@ -46,6 +46,8 @@ def connection():
     con.execute("SET temp_directory='/tmp'")
     con.execute("LOAD httpfs")
     con.execute("LOAD aws")
+    # spatial provides ST_AsGeoJSON / ST_GeomFromWKB for geometry output.
+    con.execute("LOAD spatial")
     con.execute(f"SET s3_region='{_REGION}'")
     # Pull credentials from the Lambda execution role via the standard chain.
     con.execute("CREATE SECRET aws_creds (TYPE s3, PROVIDER credential_chain)")
