@@ -178,6 +178,16 @@ def main() -> None:
         log.warning("No objects found under s3://%s/%s; nothing to do.", ingestion_bucket, source_prefix)
         return
 
+    # Locate the config.json that triggered this run (uploaded alongside the GDB).
+    # It is published to the app bucket root at the end so the frontend can read it.
+    config_local = None
+    for key in source_keys:
+        if os.path.basename(key) == "config.json":
+            config_local = os.path.join(ingest_dir, key.replace("/", os.sep))
+            break
+    if config_local is None:
+        log.warning("No config.json found in the ingestion upload; the hosted frontend config will not be updated.")
+
     geodatabases = find_geodatabases(ingest_dir)
     if not geodatabases:
         log.warning("No .gdb found in the downloaded data; nothing to convert.")
@@ -236,6 +246,16 @@ def main() -> None:
         return
 
     log.info("Done. Wrote %d output file(s) to s3://%s", uploaded, app_bucket)
+
+    # Publish the config.json to the app bucket root so the frontend can fetch it.
+    if config_local and os.path.exists(config_local):
+        log.info("Publishing config -> s3://%s/config.json", app_bucket)
+        s3.upload_file(
+            config_local,
+            app_bucket,
+            "config.json",
+            ExtraArgs={"ContentType": "application/json"},
+        )
 
     # Only reached if every conversion + upload above succeeded (any failure
     # raises and fails the job first), so it is safe to remove the sources now.
