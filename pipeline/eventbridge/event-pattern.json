@@ -3,6 +3,6 @@
   "detail-type": ["Object Created"],
   "detail": {
     "bucket": { "name": ["{{ING}}"] },
-    "object": { "key": [{ "suffix": ".complete" }] }
+    "object": { "key": [{ "suffix": "config.json" }] }
   }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
-import { Protocol, PMTiles } from 'pmtiles'
+import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { AppConfig } from './config'
 
@@ -87,30 +87,4 @@ export default function MapContainer({ config }: MapContainerProps) {
   }, [config])
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
-}
-
-/**
- * Reads the bounding box from each visible-by-default layer's pmtiles header,
- * unions them, and fits the map to that combined extent.
- */
-async function frameVisibleLayers(map: maplibregl.Map, config: AppConfig) {
-  const visible = config.layers.filter((l) => l.visibleByDefault)
-  if (visible.length === 0) return
-
-  const headers = await Promise.all(
-    visible.map((l) =>
-      new PMTiles(`${PMTILES_BASE}${l.id}.pmtiles`)
-        .getHeader()
-        .catch(() => null),
-    ),
-  )
-
-  let bounds: maplibregl.LngLatBounds | null = null
-  for (const h of headers) {
-    if (!h) continue
-    const b = new maplibregl.LngLatBounds([h.minLon, h.minLat], [h.maxLon, h.maxLat])
-    bounds = bounds ? bounds.extend(b) : b
-  }
-
-  if (bounds) map.fitBounds(bounds, { padding: 40, duration: 0 })
 }
