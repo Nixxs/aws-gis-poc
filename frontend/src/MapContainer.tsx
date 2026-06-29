@@ -3,6 +3,7 @@ import maplibregl from 'maplibre-gl'
 import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { AppConfig } from './config'
+import { onLayerToggle } from './events'
 
 // Register the pmtiles:// protocol ONCE, at module load — not per render.
 const protocol = new Protocol()
@@ -41,6 +42,13 @@ export default function MapContainer({ config }: MapContainerProps) {
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
     mapRef.current = map
 
+    // Listen for layer toggles from the sidebar and flip visibility.
+    const unsubscribe = onLayerToggle((e) => {
+      const v = e.visible ? 'visible' : 'none'
+      map.setLayoutProperty(`${e.id}-fill`, 'visibility', v)
+      map.setLayoutProperty(`${e.id}-line`, 'visibility', v)
+    })
+
     // Quiet safety net: surface any MapLibre style/tile errors in the console.
     map.on('error', (e) => console.error('[map error]', e.error ?? e))
 
@@ -78,9 +86,51 @@ export default function MapContainer({ config }: MapContainerProps) {
           layout: { visibility: initialVisibility },
         })
       }
+
+      // Click a feature -> show its attributes in a popup.
+      const fillLayerIds = config.layers.map((l) => `${l.id}-fill`)
+      map.on('click', fillLayerIds, (e) => {
+        const feature = e.features?.[0]
+        if (!feature) return
+
+        // Highlight: rebuild a single outline layer matching the clicked feature.
+        if (map.getLayer('highlight')) map.removeLayer('highlight')
+
+        // A MapLibre filter is "match every property this feature has".
+        // Start with 'all' (logical AND), then add one ['==', field, value] test per attribute.
+        const attributes = feature.properties ?? {}
+        const filter: any = ['all']
+        for (const fieldName of Object.keys(attributes)) {
+          const fieldValue = attributes[fieldName]
+          filter.push(['==', ['get', fieldName], fieldValue])
+        }
+
+        map.addLayer({
+          id: 'highlight',
+          type: 'line',
+          source: feature.source,
+          'source-layer': feature.sourceLayer!,
+          paint: { 'line-color': '#ffeb3b', 'line-width': 3 },
+          filter,
+        })
+
+        const rows = Object.entries(feature.properties ?? {})
+          .map(([k, v]) => `<tr><td><b>${k}</b></td><td>${v}</td></tr>`)
+          .join('')
+        const popup = new maplibregl.Popup({ maxWidth: '320px' })
+          .setLngLat(e.lngLat)
+          .setHTML(`<table>${rows}</table>`)
+          .addTo(map)
+        // Clear the highlight when the popup is dismissed.
+        popup.on('close', () => { if (map.getLayer('highlight')) map.removeLayer('highlight') })
+      })
+      // Hint that features are clickable.
+      map.on('mouseenter', fillLayerIds, () => (map.getCanvas().style.cursor = 'pointer'))
+      map.on('mouseleave', fillLayerIds, () => (map.getCanvas().style.cursor = ''))
     })
 
     return () => {
+      unsubscribe()
       map.remove()
       mapRef.current = null
     }

@@ -235,9 +235,10 @@ yes, its alot.. but this is the world we live in now. Anyway, you can see event 
 If the event bridge rule is triggering the target (ie aws batch job) everytime a new file is created in the bucket, it will run the data processing script for each file in the geodatabase which is incredibly inefficeint. So the event-pattern.json file has been updated to also check that the newly created object in the bucket has a ".complete" at the end of the filename. So the target/batch job only runs once. the work flow would be:
 
 1. upload the new gdb
-2. once the gdb finished uploading, then upload a file called ".complete" to actually trigger the batch job.
+2. setup your `config.json`
+2. once the gdb finished uploading, then upload a file called `config.json` to actually trigger the batch job.
 
-yes this is very awkward, why not just have the uploader manually run the batch job by clicking a few things in the AWS console? either that or have it just run the batch on a schedule, we can do that by making a new aws event in event bridge using the same targets.json since its the same job:
+This is abit awkward, why not just have the uploader manually run the batch job by clicking a few things in the AWS console? either that or have it just run the batch on a schedule, we can do that by making a new aws event in event bridge using the same targets.json since its the same job:
 
 ```
 cd d:\Development\aws-gis-poc\pipeline\eventbridge
@@ -251,6 +252,8 @@ aws events put-rule --name gis-poc-schedule --schedule-expression "rate(1 hour)"
 # attach the same Batch target (reuse the targets.json)
 aws events put-targets --rule gis-poc-schedule --targets file://targets.json
 ```
+
+it is however nice that, whoever is making and uploading the data is also the same person setting up and configuring the config.json file. This could also be setup in a separate repository that does the upload as a merge action, this would allow for data source control (just be aware the data is huge). 
 
 this is something the business can consider, we could also make a gui that calls a lambda that then runs the batch job I suppose but would need considerable amount more thought before implementation..
 
@@ -380,6 +383,31 @@ TODO:
 - Tippacanoe is used to create **pmtile** files from the geodatabse feature classes
     - Tippacanoe needs geojson which means the source crs needs to convert from source to 4326 (WGS84) this could be an issue because the source is GDA2020 much more accurate that WGS84.
     - this process is also resource heavy, so i've had to pump the CPU and memory up on the job definition 
+
+## 4.0 Frontendd
+
+### 4.1 Frontend Application Architecture
+
+The front end application is built with react typescript using the maplibre library for the interactive map window and material ui for ui elements.
+
+map layers are rendered into the map directly from the public s3 pmtiles sources that are output by the backend gis data pipeline process (see section 2).
+
+PMTiles allow the user to query individual features on-click but querying spatially needs to be done against the lambda api endpoints (see section 3). The frontend uses the lambda endpoints to make these api queries possible. 
+
+### 4.2 Layer configuration
+
+Layer order and symbology is defined by the config.json file that is hosted in the root of the application s3 bucket. This file can be editid directly in AWS if you need to but ideally it is updated along with the data via the data pipeline process (section 2).
+
+### 4.2 Frontend Deployment
+
+The built front-end application is hosted on a private s3 bucket called `gis-poc-web-intelligis` this bucket is configured to block all access.
+
+Next cloudfront is setup with a distribution which has been configured with an origin pointing to the `gis-poc-web-intelligis` bucket.
+
+An Origin Access Control is created (OAC) as well, the setup origin is called `cloudfeont.amazaws.com`. 
+The bucket is still private at this point so so a policy is applied to the bucket to allow the `cloudfront.amazonaws.com` OAC to access it. 
+
+Ultimately, if you just want to update the front-end iwth a new deployment you can just run the `deploy-frontend.ps1` deployment script and it will udpate the front end idempotently.
 
 # APPENDIX
 
