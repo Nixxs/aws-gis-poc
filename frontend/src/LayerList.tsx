@@ -18,10 +18,10 @@ export default function LayerList() {
     )
   }, [config])
 
-  const toggle = (id: string, label: string) =>
+  const toggle = (id: string) =>
     setVisible((prev) => {
       const next = !prev[id]
-      emitLayerToggle({ name: label, visible: next })
+      emitLayerToggle({ id, visible: next })
       return { ...prev, [id]: next }
     })
 
@@ -41,7 +41,7 @@ export default function LayerList() {
                 edge="start"
                 size="small"
                 checked={visible[layer.id] ?? false}
-                onChange={() => toggle(layer.id, layer.label)}
+                onChange={() => toggle(layer.id)}
               />
             </ListItemIcon>
             {/* colour swatch so you can see each layer's colour */}

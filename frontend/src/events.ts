@@ -4,7 +4,7 @@
 import mitt from 'mitt'
 
 export interface LayerToggleEvent {
-  name: string      // the layer that was switched
+  id: string        // the layer that was switched (matches config + map layer id)
   visible: boolean  // true = turned on, false = turned off
 }
 

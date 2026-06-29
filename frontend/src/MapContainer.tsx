@@ -42,10 +42,12 @@ export default function MapContainer({ config }: MapContainerProps) {
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
     mapRef.current = map
 
-    // Listen for layer toggles from the sidebar. For now just alert it.
-    const unsubscribe = onLayerToggle((e) =>
-      alert(`${e.name} turned ${e.visible ? 'on' : 'off'}`),
-    )
+    // Listen for layer toggles from the sidebar and flip visibility.
+    const unsubscribe = onLayerToggle((e) => {
+      const v = e.visible ? 'visible' : 'none'
+      map.setLayoutProperty(`${e.id}-fill`, 'visibility', v)
+      map.setLayoutProperty(`${e.id}-line`, 'visibility', v)
+    })
 
     // Quiet safety net: surface any MapLibre style/tile errors in the console.
     map.on('error', (e) => console.error('[map error]', e.error ?? e))
