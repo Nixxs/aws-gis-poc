@@ -86,6 +86,23 @@ export default function MapContainer({ config }: MapContainerProps) {
           layout: { visibility: initialVisibility },
         })
       }
+
+      // Click a feature -> show its attributes in a popup.
+      const fillLayerIds = config.layers.map((l) => `${l.id}-fill`)
+      map.on('click', fillLayerIds, (e) => {
+        const feature = e.features?.[0]
+        if (!feature) return
+        const rows = Object.entries(feature.properties ?? {})
+          .map(([k, v]) => `<tr><td><b>${k}</b></td><td>${v}</td></tr>`)
+          .join('')
+        new maplibregl.Popup({ maxWidth: '320px' })
+          .setLngLat(e.lngLat)
+          .setHTML(`<table>${rows}</table>`)
+          .addTo(map)
+      })
+      // Hint that features are clickable.
+      map.on('mouseenter', fillLayerIds, () => (map.getCanvas().style.cursor = 'pointer'))
+      map.on('mouseleave', fillLayerIds, () => (map.getCanvas().style.cursor = ''))
     })
 
     return () => {
