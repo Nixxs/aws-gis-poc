@@ -3,8 +3,9 @@
     One-command deploy for the GIS POC data pipeline.
 
 .DESCRIPTION
-    Reads configuration from ../.env (simple KEY=VALUE lines) and brings AWS to
-    the desired state. Safe to run repeatedly - it does NOT create duplicate
+    Reads configuration from ../.env (REGION, ACCT shared with the frontend)
+    plus pipeline/.env (pipeline-only: ING, APP, REPO, VPC, SUBNET, SG) and
+    brings AWS to the desired state. Safe to run repeatedly - it does NOT create duplicate
     resources:
 
       1. Builds the Docker image and pushes it to ECR.
@@ -29,6 +30,7 @@ $ErrorActionPreference = "Stop"
 $pipelineDir = $PSScriptRoot
 $repoRoot    = Split-Path -Parent $pipelineDir
 $envFile     = Join-Path $repoRoot ".env"
+$pipelineEnv = Join-Path $pipelineDir ".env"
 $iamDir      = Join-Path $pipelineDir "iam"
 $batchDir    = Join-Path $pipelineDir "batch"
 $ebDir       = Join-Path $pipelineDir "eventbridge"
@@ -43,9 +45,6 @@ function Read-DotEnv($path) {
         if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$') {
             $cfg[$Matches[1]] = $Matches[2]
         }
-    }
-    foreach ($key in 'REGION', 'ACCT', 'ING', 'APP', 'REPO') {
-        if (-not $cfg.ContainsKey($key)) { throw ".env is missing required key: $key" }
     }
     return $cfg
 }
@@ -90,6 +89,10 @@ function Ensure-Role($roleName, $trustUri) {
 # --- setup -----------------------------------------------------------------
 
 $cfg = Read-DotEnv $envFile
+foreach ($pair in (Read-DotEnv $pipelineEnv).GetEnumerator()) { $cfg[$pair.Key] = $pair.Value }
+foreach ($key in 'REGION', 'ACCT', 'ING', 'APP', 'REPO') {
+    if (-not $cfg.ContainsKey($key)) { throw "missing required env key: $key (check root .env + pipeline/.env)" }
+}
 New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 Write-Host "Deploying with ACCT=$($cfg.ACCT) REGION=$($cfg.REGION)" -ForegroundColor Green
 

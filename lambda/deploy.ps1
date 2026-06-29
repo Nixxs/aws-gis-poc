@@ -1,5 +1,5 @@
 # Deploys the gis-poc-query Lambda (container image) + a public Function URL.
-# Idempotent: safe to re-run. Driven by ../.env (needs REGION, ACCT, APP).
+# Idempotent: safe to re-run. REGION + ACCT come from ../.env; APP from lambda/.env.
 #
 #   powershell -ExecutionPolicy Bypass -File lambda\deploy.ps1
 #
@@ -11,12 +11,9 @@ $ErrorActionPreference = "Stop"
 $lambdaDir = $PSScriptRoot
 $repoRoot  = Split-Path -Parent $lambdaDir
 $envFile   = Join-Path $repoRoot ".env"
+$lambdaEnv = Join-Path $lambdaDir ".env"
 $iamDir    = Join-Path $lambdaDir "iam"
 $tmpDir    = Join-Path $lambdaDir ".deploy-tmp"
-
-$functionName = "gis-poc-query"
-$roleName     = "gisPocQueryLambdaRole"
-$ecrRepoName  = "gis-poc-query"
 
 # --- helpers ---------------------------------------------------------------
 function Read-DotEnv($path) {
@@ -25,9 +22,6 @@ function Read-DotEnv($path) {
     foreach ($line in Get-Content $path) {
         if ($line -match '^\s*#') { continue }
         if ($line -match '^\s*([^=\s]+)\s*=\s*(.*)\s*$') { $c[$Matches[1]] = $Matches[2].Trim() }
-    }
-    foreach ($k in 'REGION', 'ACCT', 'APP') {
-        if (-not $c.ContainsKey($k) -or -not $c[$k]) { throw ".env missing required key: $k" }
     }
     return $c
 }
@@ -76,6 +70,13 @@ function Ensure-Role($name, $trustUri) {
 
 # --- setup -----------------------------------------------------------------
 $cfg = Read-DotEnv $envFile
+foreach ($pair in (Read-DotEnv $lambdaEnv).GetEnumerator()) { $cfg[$pair.Key] = $pair.Value }
+foreach ($k in 'REGION', 'ACCT', 'APP', 'FUNCTION_NAME', 'ROLE_NAME', 'ECR_REPO') {
+    if (-not $cfg.ContainsKey($k) -or -not $cfg[$k]) { throw "missing required env key: $k (check root .env + lambda/.env)" }
+}
+$functionName = $cfg.FUNCTION_NAME
+$roleName     = $cfg.ROLE_NAME
+$ecrRepoName  = $cfg.ECR_REPO
 New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 $registry = "$($cfg.ACCT).dkr.ecr.$($cfg.REGION).amazonaws.com"
 $imageUri = "$registry/$($ecrRepoName):latest"
