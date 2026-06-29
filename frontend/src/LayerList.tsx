@@ -4,6 +4,7 @@ import {
   Switch, Typography, Box,
 } from '@mui/material'
 import { useConfig } from './config'
+import { emitLayerToggle } from './events'
 
 export default function LayerList() {
   const { config, error } = useConfig()
@@ -17,8 +18,12 @@ export default function LayerList() {
     )
   }, [config])
 
-  const toggle = (id: string) =>
-    setVisible((prev) => ({ ...prev, [id]: !prev[id] }))
+  const toggle = (id: string, label: string) =>
+    setVisible((prev) => {
+      const next = !prev[id]
+      emitLayerToggle({ name: label, visible: next })
+      return { ...prev, [id]: next }
+    })
 
   if (error) return <Typography color="error" sx={{ p: 2 }}>{error}</Typography>
   if (!config) return <Typography sx={{ p: 2 }}>Loading layers…</Typography>
@@ -36,7 +41,7 @@ export default function LayerList() {
                 edge="start"
                 size="small"
                 checked={visible[layer.id] ?? false}
-                onChange={() => toggle(layer.id)}
+                onChange={() => toggle(layer.id, layer.label)}
               />
             </ListItemIcon>
             {/* colour swatch so you can see each layer's colour */}

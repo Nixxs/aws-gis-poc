@@ -3,6 +3,7 @@ import maplibregl from 'maplibre-gl'
 import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { AppConfig } from './config'
+import { onLayerToggle } from './events'
 
 // Register the pmtiles:// protocol ONCE, at module load — not per render.
 const protocol = new Protocol()
@@ -40,6 +41,11 @@ export default function MapContainer({ config }: MapContainerProps) {
     })
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
     mapRef.current = map
+
+    // Listen for layer toggles from the sidebar. For now just alert it.
+    const unsubscribe = onLayerToggle((e) =>
+      alert(`${e.name} turned ${e.visible ? 'on' : 'off'}`),
+    )
 
     // Quiet safety net: surface any MapLibre style/tile errors in the console.
     map.on('error', (e) => console.error('[map error]', e.error ?? e))
@@ -81,6 +87,7 @@ export default function MapContainer({ config }: MapContainerProps) {
     })
 
     return () => {
+      unsubscribe()
       map.remove()
       mapRef.current = null
     }
