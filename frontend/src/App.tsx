@@ -1,7 +1,8 @@
-import { Box, AppBar, Toolbar, Typography, Drawer } from '@mui/material'
+import { Box, AppBar, Toolbar, Typography, Drawer, Divider } from '@mui/material'
 import MapIcon from '@mui/icons-material/Map'
 import MapContainer from './MapContainer'
 import LayerList from './LayerList'
+import QueryPanel from './QueryPanel'
 import { useConfig } from './config'
 
 const DRAWER_WIDTH = 340
@@ -41,6 +42,8 @@ export default function App() {
                 <Toolbar variant="dense" />{/* spacer so content starts below the AppBar */}
                 <Box sx={{ overflow: 'auto', p: 2 }}>
                     <LayerList />
+                    <Divider sx={{ my: 2 }} />
+                    <QueryPanel />
                 </Box>
             </Drawer>
 

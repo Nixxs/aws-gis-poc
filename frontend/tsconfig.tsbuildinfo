@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/layerlist.tsx","./src/mapcontainer.tsx","./src/config.ts","./src/events.ts","./src/main.tsx","./src/vite-env.d.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/layerlist.tsx","./src/mapcontainer.tsx","./src/querypanel.tsx","./src/api.ts","./src/config.ts","./src/events.ts","./src/main.tsx","./src/vite-env.d.ts"],"version":"5.9.3"}
