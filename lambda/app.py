@@ -4,6 +4,7 @@ GeoParquet layers the pipeline writes to the app bucket.
 It uses an "action" router so one Lambda can serve every query type:
     action=list-layers       -> names of the layers available to query
     action=describe-layer     -> a layer's column schema
+    action=unique-values      -> distinct values of one column (for autocomplete)
     action=query              -> rows from a layer with an Esri-style filter
 
 The handler reads the API Gateway / Lambda Function URL "v2.0" event shape, so
@@ -86,13 +87,17 @@ def handler(event, context):
             layer = get_param(event, "layer")
             return _response(200, describe_layer(APP_BUCKET, GEOPARQUET_PREFIX, layer))
 
+        if action == "unique-values":
+            from queries.unique_values import unique_values
+            return _response(200, unique_values(all_params(event), APP_BUCKET, GEOPARQUET_PREFIX))
+
         if action == "query":
             from queries.query_layer import query_layer
             return _response(200, query_layer(all_params(event), APP_BUCKET, GEOPARQUET_PREFIX))
 
         return _response(400, {
             "error": f"unknown or missing action: {action!r}",
-            "actions": ["list-layers", "describe-layer", "query"],
+            "actions": ["list-layers", "describe-layer", "unique-values", "query"],
         })
     except ValueError as exc:  # bad/missing parameters -> client error
         return _response(400, {"error": str(exc)})
