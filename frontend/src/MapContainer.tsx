@@ -3,13 +3,22 @@ import maplibregl from 'maplibre-gl'
 import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { AppConfig } from './config'
-import { onLayerToggle } from './events'
+import { onLayerToggle, onQueryResult, onClearQuery } from './events'
 
 // Register the pmtiles:// protocol ONCE, at module load — not per render.
 const protocol = new Protocol()
 maplibregl.addProtocol('pmtiles', protocol.tile)
 
 const PMTILES_BASE = import.meta.env.VITE_PMTILES_BASE_URL
+
+// Walk any GeoJSON coordinate nesting and stretch the bounds to include it.
+function extendBounds(bounds: maplibregl.LngLatBounds, coords: any) {
+  if (typeof coords[0] === 'number') {
+    bounds.extend(coords as [number, number])
+  } else {
+    for (const c of coords) extendBounds(bounds, c)
+  }
+}
 
 interface MapContainerProps {
   config: AppConfig
@@ -43,11 +52,12 @@ export default function MapContainer({ config }: MapContainerProps) {
     mapRef.current = map
 
     // Listen for layer toggles from the sidebar and flip visibility.
-    const unsubscribe = onLayerToggle((e) => {
+    const subs: Array<() => void> = []
+    subs.push(onLayerToggle((e) => {
       const v = e.visible ? 'visible' : 'none'
       map.setLayoutProperty(`${e.id}-fill`, 'visibility', v)
       map.setLayoutProperty(`${e.id}-line`, 'visibility', v)
-    })
+    }))
 
     // Quiet safety net: surface any MapLibre style/tile errors in the console.
     map.on('error', (e) => console.error('[map error]', e.error ?? e))
@@ -127,10 +137,42 @@ export default function MapContainer({ config }: MapContainerProps) {
       // Hint that features are clickable.
       map.on('mouseenter', fillLayerIds, () => (map.getCanvas().style.cursor = 'pointer'))
       map.on('mouseleave', fillLayerIds, () => (map.getCanvas().style.cursor = ''))
+
+      // Query results: a GeoJSON source the QueryPanel feeds via events.
+      const EMPTY = { type: 'FeatureCollection' as const, features: [] }
+      map.addSource('query-result', { type: 'geojson', data: EMPTY })
+      map.addLayer({
+        id: 'query-result-fill',
+        type: 'fill',
+        source: 'query-result',
+        paint: { 'fill-color': '#e91e63', 'fill-opacity': 0.35 },
+      })
+      map.addLayer({
+        id: 'query-result-line',
+        type: 'line',
+        source: 'query-result',
+        paint: { 'line-color': '#e91e63', 'line-width': 2 },
+      })
+
+      subs.push(onQueryResult((e) => {
+        const source = map.getSource('query-result') as maplibregl.GeoJSONSource
+        source.setData(e.geojson as any)
+        // Zoom to the results.
+        const bounds = new maplibregl.LngLatBounds()
+        for (const f of e.geojson.features) {
+          if (f.geometry) extendBounds(bounds, (f.geometry as any).coordinates)
+        }
+        if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, maxZoom: 14 })
+      }))
+
+      subs.push(onClearQuery(() => {
+        const source = map.getSource('query-result') as maplibregl.GeoJSONSource
+        source.setData(EMPTY as any)
+      }))
     })
 
     return () => {
-      unsubscribe()
+      subs.forEach((off) => off())
       map.remove()
       mapRef.current = null
     }
