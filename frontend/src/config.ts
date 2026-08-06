@@ -15,7 +15,9 @@ export interface AppConfig {
 export async function loadConfig(): Promise<AppConfig> {
   // In prod this points at the hosted config.json in the app bucket
   // (VITE_CONFIG_URL); in local dev it falls back to public/config.json.
-  const url = import.meta.env.VITE_CONFIG_URL ?? '/config.json'
+  // NOTE: use || not ?? — a blank VITE_CONFIG_URL is exposed as an empty
+  // string (not undefined), and fetch('') would load index.html instead.
+  const url = import.meta.env.VITE_CONFIG_URL || '/config.json'
   const res = await fetch(url)
   if (!res.ok) throw new Error(`Failed to load config.json: ${res.status}`)
   return res.json() as Promise<AppConfig>
