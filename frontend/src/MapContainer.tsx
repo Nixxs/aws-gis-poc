@@ -4,6 +4,7 @@ import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { AppConfig } from './config'
 import { onLayerToggle, onQueryResult, onClearQuery } from './events'
+import { GoToLatLngControl } from './GoToLatLngControl'
 
 // Register the pmtiles:// protocol ONCE, at module load — not per render.
 const protocol = new Protocol()
@@ -62,6 +63,9 @@ export default function MapContainer({ config }: MapContainerProps) {
       }),
       'top-left',
     )
+
+    // "Go to lat/long" — custom control, sits next to the geolocate button.
+    map.addControl(new GoToLatLngControl(), 'top-left')
 
     // Distance scale bar — bottom-left, metric units.
     map.addControl(
