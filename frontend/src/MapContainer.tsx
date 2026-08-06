@@ -49,6 +49,20 @@ export default function MapContainer({ config }: MapContainerProps) {
       zoom: 8,
     })
     map.addControl(new maplibregl.NavigationControl(), 'top-right')
+
+    // "Find my location" — built-in geolocate control (top-left toolbar).
+    // Uses the browser Geolocation API: on click it centres the map on the
+    // user and drops a marker with an accuracy circle.
+    map.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,   // keep the marker updated as the user moves
+        showAccuracyCircle: true,
+        showUserLocation: true,
+      }),
+      'top-left',
+    )
+
     mapRef.current = map
 
     // Listen for layer toggles from the sidebar and flip visibility.
