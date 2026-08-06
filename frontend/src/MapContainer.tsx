@@ -79,8 +79,10 @@ export default function MapContainer({ config }: MapContainerProps) {
     const subs: Array<() => void> = []
     subs.push(onLayerToggle((e) => {
       const v = e.visible ? 'visible' : 'none'
-      map.setLayoutProperty(`${e.id}-fill`, 'visibility', v)
-      map.setLayoutProperty(`${e.id}-line`, 'visibility', v)
+      // Vector layers render as -fill/-line; basemap rasters use the bare id.
+      for (const id of [`${e.id}-fill`, `${e.id}-line`, e.id]) {
+        if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v)
+      }
     }))
 
     // Quiet safety net: surface any MapLibre style/tile errors in the console.
@@ -88,6 +90,22 @@ export default function MapContainer({ config }: MapContainerProps) {
 
     // Sources/layers can only be added AFTER the base style has loaded.
     map.on('load', () => {
+      // Basemaps first so they sit BENEATH the vector data layers.
+      for (const bm of config.basemaps ?? []) {
+        map.addSource(bm.id, {
+          type: 'raster',
+          tiles: [bm.url],
+          tileSize: bm.tileSize ?? 256,
+          ...(bm.attribution ? { attribution: bm.attribution } : {}),
+        })
+        map.addLayer({
+          id: bm.id,
+          type: 'raster',
+          source: bm.id,
+          layout: { visibility: bm.visibleByDefault ? 'visible' : 'none' },
+        })
+      }
+
       for (const layer of config.layers) {
         const url = `pmtiles://${PMTILES_BASE}${layer.id}.pmtiles`
         const initialVisibility = layer.visibleByDefault ? 'visible' : 'none'

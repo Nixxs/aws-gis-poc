@@ -8,7 +8,19 @@ export interface LayerConfig {
   color: string         // hex, used for fill AND outline
 }
 
+export interface BasemapConfig {
+  id: string            // unique id, used as the map source/layer id
+  label: string
+  url: string           // raster tile URL template ({z}/{x}/{y}). For WMTS,
+                        // use the GetTile template mapping {z}->TileMatrix,
+                        // {x}->TileCol, {y}->TileRow.
+  visibleByDefault: boolean
+  attribution?: string  // shown in the map's attribution control
+  tileSize?: number     // defaults to 256
+}
+
 export interface AppConfig {
+  basemaps?: BasemapConfig[]
   layers: LayerConfig[]
 }
 
