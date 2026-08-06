@@ -1,0 +1,17 @@
+cache_mode,metric,runs,mean,median_p50,p95,minimum,maximum
+cold,ttfb_ms,5,5.66,5.7,7.1,4.6,7.4
+cold,first_contentful_paint_ms,5,149.6,148.0,157.6,144.0,160.0
+cold,largest_contentful_paint_ms,5,149.6,148.0,157.6,144.0,160.0
+cold,map_canvas_visible_ms,5,503.74,523.2,567.64,422.5,573.9
+cold,pmtiles_network_settled_ms,5,2234.18,2262.1,2315.66,2137.9,2328.3
+cold,total_blocking_time_ms,5,4.0,0.0,16.0,0.0,20.0
+cold,pmtiles_request_count,5,14.0,14.0,14.0,14.0,14.0
+cold,pmtiles_transfer_bytes,5,0.0,0.0,0.0,0.0,0.0
+warm,ttfb_ms,5,0.0,0.0,0.0,0.0,0.0
+warm,first_contentful_paint_ms,5,60.0,60.0,70.4,52.0,72.0
+warm,largest_contentful_paint_ms,5,60.0,60.0,70.4,52.0,72.0
+warm,map_canvas_visible_ms,5,199.7,161.3,349.92,120.2,389.2
+warm,pmtiles_network_settled_ms,5,1961.88,1948.6,2090.72,1860.8,2110.7
+warm,total_blocking_time_ms,5,0.0,0.0,0.0,0.0,0.0
+warm,pmtiles_request_count,5,14.0,14.0,14.0,14.0,14.0
+warm,pmtiles_transfer_bytes,5,0.0,0.0,0.0,0.0,0.0

@@ -1,0 +1,139 @@
+{
+  "framing": "Modelled scenario derived from stated behaviour assumptions. Not measured production demand.",
+  "sessions_per_user": 1.0,
+  "assumptions": [
+    {
+      "profile": "VicPlan",
+      "weekday_users": 7000,
+      "weekend_users": 2000,
+      "avg_session_minutes": 4.0,
+      "peak_hour_fraction": 0.13,
+      "calls_per_session": {
+        "list-layers": 1.0,
+        "describe-layer": 0.6,
+        "unique-values": 2.4,
+        "query": 0.9
+      },
+      "map_actions_per_session": {
+        "pan_zoom": 15,
+        "layer_toggle": 3
+      }
+    },
+    {
+      "profile": "Radius",
+      "weekday_users": 25,
+      "weekend_users": 0,
+      "avg_session_minutes": 15.0,
+      "peak_hour_fraction": 0.2,
+      "calls_per_session": {
+        "list-layers": 1.0,
+        "describe-layer": 4.0,
+        "unique-values": 20.0,
+        "query": 8.0
+      },
+      "map_actions_per_session": {
+        "pan_zoom": 40,
+        "layer_toggle": 10
+      }
+    }
+  ],
+  "results": [
+    {
+      "profile": "VicPlan",
+      "day_type": "weekday",
+      "users": 7000,
+      "sessions": 7000.0,
+      "peak_hour_sessions": 910.0,
+      "peak_concurrent_sessions": 60.67,
+      "total_daily_calls": 34300.0,
+      "total_peak_rps": 1.2386,
+      "endpoint_peak_rps": {
+        "list-layers": 0.2528,
+        "describe-layer": 0.1517,
+        "unique-values": 0.6067,
+        "query": 0.2275
+      },
+      "map_daily_actions": {
+        "pan_zoom": 105000.0,
+        "layer_toggle": 21000.0
+      }
+    },
+    {
+      "profile": "VicPlan",
+      "day_type": "weekend",
+      "users": 2000,
+      "sessions": 2000.0,
+      "peak_hour_sessions": 260.0,
+      "peak_concurrent_sessions": 17.33,
+      "total_daily_calls": 9800.0,
+      "total_peak_rps": 0.3539,
+      "endpoint_peak_rps": {
+        "list-layers": 0.0722,
+        "describe-layer": 0.0433,
+        "unique-values": 0.1733,
+        "query": 0.065
+      },
+      "map_daily_actions": {
+        "pan_zoom": 30000.0,
+        "layer_toggle": 6000.0
+      }
+    },
+    {
+      "profile": "Radius",
+      "day_type": "weekday",
+      "users": 25,
+      "sessions": 25.0,
+      "peak_hour_sessions": 5.0,
+      "peak_concurrent_sessions": 1.25,
+      "total_daily_calls": 825.0,
+      "total_peak_rps": 0.0458,
+      "endpoint_peak_rps": {
+        "list-layers": 0.0014,
+        "describe-layer": 0.0056,
+        "unique-values": 0.0278,
+        "query": 0.0111
+      },
+      "map_daily_actions": {
+        "pan_zoom": 1000.0,
+        "layer_toggle": 250.0
+      }
+    },
+    {
+      "profile": "Radius",
+      "day_type": "weekend",
+      "users": 0,
+      "sessions": 0.0,
+      "peak_hour_sessions": 0.0,
+      "peak_concurrent_sessions": 0.0,
+      "total_daily_calls": 0.0,
+      "total_peak_rps": 0.0,
+      "endpoint_peak_rps": {
+        "list-layers": 0.0,
+        "describe-layer": 0.0,
+        "unique-values": 0.0,
+        "query": 0.0
+      },
+      "map_daily_actions": {
+        "pan_zoom": 0.0,
+        "layer_toggle": 0.0
+      }
+    }
+  ],
+  "combined_weekday_peak": {
+    "peak_concurrent": 61.92,
+    "total_peak_rps": 1.2844,
+    "endpoint_peak_rps": {
+      "list-layers": 0.2542,
+      "describe-layer": 0.1572,
+      "unique-values": 0.6344,
+      "query": 0.2386
+    },
+    "suggested_concurrency": [
+      1,
+      5,
+      10,
+      25,
+      50
+    ]
+  }
+}
