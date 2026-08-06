@@ -1,0 +1,52 @@
+{
+  "_comment": "Copy to requests.json, fill in real field names, set enabled:true. GET cases use params; POST cases (query/unique-values) put action in params and the body in json_body, matching the Lambda's dual GET/POST handling.",
+  "base_url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+  "requests": [
+    {
+      "name": "list-layers",
+      "enabled": true,
+      "method": "GET",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "list-layers" }
+    },
+    {
+      "name": "describe-layer",
+      "enabled": true,
+      "method": "GET",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": {
+        "action": "describe-layer",
+        "layer": "au_vic_dtp_env_environmental_significance"
+      }
+    },
+    {
+      "name": "query-no-filter",
+      "enabled": true,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_env_environmental_significance",
+        "where": "1=1",
+        "f": "json",
+        "resultRecordCount": 200
+      }
+    },
+    {
+      "name": "unique-values",
+      "_note": "Template: replace REPLACE_WITH_REAL_FIELD with a real attribute name from describe-layer, then set enabled:true.",
+      "enabled": false,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "unique-values" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_env_environmental_significance",
+        "field": "REPLACE_WITH_REAL_FIELD",
+        "search": "",
+        "limit": 50
+      }
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+# API load test (api_performance.py)
+httpx>=0.27
+
+# Browser / map metrics (frontend_performance.py)
+# After installing, download the browser once:
+#   .venv\Scripts\playwright.exe install chromium
+playwright>=1.44
