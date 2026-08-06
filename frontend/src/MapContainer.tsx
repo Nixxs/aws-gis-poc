@@ -63,6 +63,12 @@ export default function MapContainer({ config }: MapContainerProps) {
       'top-left',
     )
 
+    // Distance scale bar — bottom-left, metric units.
+    map.addControl(
+      new maplibregl.ScaleControl({ unit: 'metric' }),
+      'bottom-left',
+    )
+
     mapRef.current = map
 
     // Listen for layer toggles from the sidebar and flip visibility.
