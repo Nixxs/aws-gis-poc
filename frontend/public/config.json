@@ -14,7 +14,8 @@
       "url": "https://base.maps.vic.gov.au/service?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=AERIAL_WM_256&STYLE=default&TILEMATRIXSET=EPSG:3857:256&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&FORMAT=image/png",
       "visibleByDefault": false,
       "attribution": "© State of Victoria (Department of Transport and Planning)",
-      "tileSize": 256
+      "tileSize": 256,
+      "requiresAuth": true
     }
   ],
   "layers": [
@@ -44,14 +45,16 @@
       "label": "Vegetation Protection",
       "visibleByDefault": false,
       "opacity": 0.4,
-      "color": "#558b2f"
+      "color": "#558b2f",
+      "requiresAuth": true
     },
     {
       "id": "au_vic_dtp_parcel",
       "label": "Parcels",
       "visibleByDefault": true,
       "opacity": 0.15,
-      "color": "#ef6c00"
+      "color": "#ef6c00",
+      "requiresAuth": true
     }
   ]
 }

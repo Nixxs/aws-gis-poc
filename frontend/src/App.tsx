@@ -3,12 +3,21 @@ import MapIcon from '@mui/icons-material/Map'
 import MapContainer from './MapContainer'
 import LayerList from './LayerList'
 import QueryPanel from './QueryPanel'
+import LoginControl from './LoginControl'
 import { useConfig } from './config'
+import { useAuth } from './auth'
+import { useState, useEffect } from 'react'
 
 const DRAWER_WIDTH = 340
 
 export default function App() {
     const { config } = useConfig()
+    const { user } = useAuth()
+    const [hasAuth, setHasAuth] = useState(false)
+
+    useEffect(() => {
+        setHasAuth(!!user)
+    }, [user])
 
     return (
         <Box sx={
@@ -24,9 +33,10 @@ export default function App() {
             <AppBar position="fixed" sx={{ zIndex: (t) => t.zIndex.drawer + 1 }}>
                 <Toolbar variant="dense">
                 <MapIcon sx={{ mr: 1 }} />
-                <Typography variant="h6" noWrap>
-                    AWS GIS POC
+                <Typography variant="h6" noWrap sx={{ flexGrow: 1 }}>
+                    AWS GIS POC - {hasAuth ? 'Private' : 'Public'}
                 </Typography>
+                <LoginControl />
                 </Toolbar>
             </AppBar>
 

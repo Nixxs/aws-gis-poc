@@ -4,6 +4,7 @@ import {
   Button, Stack, CircularProgress, Alert,
 } from '@mui/material'
 import { useConfig } from './config'
+import { useAuth } from './auth'
 import {
   describeLayer, getUniqueValues, queryLayer, type ColumnInfo,
 } from './api'
@@ -33,6 +34,14 @@ function buildWhere(col: ColumnInfo, op: Operator, value: string): string {
 
 export default function QueryPanel() {
   const { config } = useConfig()
+  const { user } = useAuth()
+
+  // Only layers the current user is allowed to see (auth-gated ones hide when
+  // signed out). Kept memoised so the reset effect below has a stable dep.
+  const availableLayers = useMemo(
+    () => config?.layers.filter((l) => !l.requiresAuth || user) ?? [],
+    [config, user],
+  )
 
   const [layer, setLayer] = useState('')
   const [columns, setColumns] = useState<ColumnInfo[]>([])
@@ -51,6 +60,14 @@ export default function QueryPanel() {
     () => columns.find((c) => c.name === field),
     [columns, field],
   )
+
+  // If the selected layer is no longer permitted (e.g. user logged out), clear
+  // the selection so the panel doesn't keep querying a hidden layer.
+  useEffect(() => {
+    if (layer && !availableLayers.some((l) => l.id === layer)) {
+      setLayer('')
+    }
+  }, [availableLayers, layer])
 
   // When the layer changes, fetch its column schema.
   useEffect(() => {
@@ -119,7 +136,7 @@ export default function QueryPanel() {
           value={layer} onChange={(e) => setLayer(e.target.value)}
         >
           {config?.layers?.length
-            ? config.layers.map((l) => (
+            ? availableLayers.map((l) => (
                 <MenuItem key={l.id} value={l.id}>{l.label}</MenuItem>
               ))
             : <MenuItem disabled value="">Loading layers…</MenuItem>}

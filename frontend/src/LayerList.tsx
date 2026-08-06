@@ -4,10 +4,12 @@ import {
   Switch, Typography, Box,
 } from '@mui/material'
 import { useConfig } from './config'
+import { useAuth } from './auth'
 import { emitLayerToggle } from './events'
 
 export default function LayerList() {
   const { config, error } = useConfig()
+  const { user } = useAuth()
   const [visible, setVisible] = useState<Record<string, boolean>>({})
 
   // Seed the on/off state once the config arrives (basemaps + data layers).
@@ -28,6 +30,11 @@ export default function LayerList() {
 
   if (error) return <Typography color="error" sx={{ p: 2 }}>{error}</Typography>
   if (!config) return <Typography sx={{ p: 2 }}>Loading layers…</Typography>
+
+  // Auth-gated basemaps hide when signed out (same rule as data layers).
+  const visibleBasemaps = (config.basemaps ?? []).filter(
+    (b) => !b.requiresAuth || user,
+  )
 
   // Render a toggle row for each item. `color` is optional (basemaps have none).
   const renderItems = (
@@ -61,19 +68,19 @@ export default function LayerList() {
 
   return (
     <>
-      {config.basemaps && config.basemaps.length > 0 && (
+      <Typography variant="overline" sx={{ px: 2, color: 'text.secondary' }}>
+        Layers
+      </Typography>
+      {renderItems(config.layers.filter((l) => !l.requiresAuth || user))}
+
+      {visibleBasemaps.length > 0 && (
         <>
           <Typography variant="overline" sx={{ px: 2, color: 'text.secondary' }}>
             Basemaps
           </Typography>
-          {renderItems(config.basemaps)}
+          {renderItems(visibleBasemaps)}
         </>
       )}
-
-      <Typography variant="overline" sx={{ px: 2, color: 'text.secondary' }}>
-        Layers
-      </Typography>
-      {renderItems(config.layers)}
     </>
   )
 }

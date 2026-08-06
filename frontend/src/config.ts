@@ -6,6 +6,7 @@ export interface LayerConfig {
   visibleByDefault: boolean
   opacity: number       // 0..1, applied to the polygon fill
   color: string         // hex, used for fill AND outline
+  requiresAuth?: boolean // if true, only shown to logged-in users (MOCK gate)
 }
 
 export interface BasemapConfig {
@@ -17,6 +18,7 @@ export interface BasemapConfig {
   visibleByDefault: boolean
   attribution?: string  // shown in the map's attribution control
   tileSize?: number     // defaults to 256
+  requiresAuth?: boolean // if true, only shown to logged-in users (MOCK gate)
 }
 
 export interface AppConfig {

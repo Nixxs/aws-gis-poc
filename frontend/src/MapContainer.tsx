@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import maplibregl from 'maplibre-gl'
 import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
-import type { AppConfig } from './config'
+import type { AppConfig, LayerConfig, BasemapConfig } from './config'
+import { useAuth } from './auth'
 import { onLayerToggle, onQueryResult, onClearQuery } from './events'
 import { GoToLatLngControl } from './GoToLatLngControl'
 
@@ -11,6 +12,94 @@ const protocol = new Protocol()
 maplibregl.addProtocol('pmtiles', protocol.tile)
 
 const PMTILES_BASE = import.meta.env.VITE_PMTILES_BASE_URL
+
+// Add a vector (PMTiles) layer's source + fill + line. Idempotent.
+function addVectorLayer(map: maplibregl.Map, layer: LayerConfig, layers: LayerConfig[]) {
+  if (map.getSource(layer.id)) return
+  const url = `pmtiles://${PMTILES_BASE}${layer.id}.pmtiles`
+  const visibility = layer.visibleByDefault ? 'visible' : 'none'
+  // Preserve config order as Z-order: earlier in config = higher on the map.
+  // Insert beneath the fill of the closest data layer ABOVE this one (smaller
+  // index) that's on the map; if none, sit just beneath the query-result
+  // highlight (i.e. at the top of the data stack, above the basemaps).
+  const index = layers.findIndex((l) => l.id === layer.id)
+  let beforeId: string | undefined
+  for (let i = index - 1; i >= 0; i--) {
+    if (map.getLayer(`${layers[i].id}-fill`)) { beforeId = `${layers[i].id}-fill`; break }
+  }
+  if (!beforeId && map.getLayer('query-result-fill')) beforeId = 'query-result-fill'
+
+  map.addSource(layer.id, { type: 'vector', url })
+  map.addLayer({
+    id: `${layer.id}-fill`,
+    type: 'fill',
+    source: layer.id,
+    'source-layer': layer.id, // == tippecanoe -l name == file stem
+    paint: {
+      'fill-color': layer.color,
+      'fill-opacity': layer.opacity,
+    },
+    layout: { visibility },
+  }, beforeId)
+  map.addLayer({
+    id: `${layer.id}-line`,
+    type: 'line',
+    source: layer.id,
+    'source-layer': layer.id,
+    paint: {
+      'line-color': layer.color,
+      'line-width': 1,
+    },
+    layout: { visibility },
+  }, beforeId)
+}
+
+// Remove a vector layer's fill + line + source. Idempotent.
+function removeVectorLayer(map: maplibregl.Map, layer: LayerConfig) {
+  for (const id of [`${layer.id}-fill`, `${layer.id}-line`]) {
+    if (map.getLayer(id)) map.removeLayer(id)
+  }
+  if (map.getSource(layer.id)) map.removeSource(layer.id)
+}
+
+// Add a raster basemap source + layer. Idempotent. Inserts beneath the data
+// layers so basemaps never cover the vector features, AND preserves config
+// order as Z-order: earlier in config = higher on the map.
+function addRasterBasemap(map: maplibregl.Map, bm: BasemapConfig, basemaps: BasemapConfig[]) {
+  if (map.getSource(bm.id)) return
+  map.addSource(bm.id, {
+    type: 'raster',
+    tiles: [bm.url],
+    tileSize: bm.tileSize ?? 256,
+    ...(bm.attribution ? { attribution: bm.attribution } : {}),
+  })
+  // Insert directly beneath the closest basemap ABOVE this one in config (a
+  // smaller index) that's currently on the map. If none, sit just beneath the
+  // first data/query layer (i.e. at the top of the basemap stack).
+  const index = basemaps.findIndex((b) => b.id === bm.id)
+  let beforeId: string | undefined
+  for (let i = index - 1; i >= 0; i--) {
+    if (map.getLayer(basemaps[i].id)) { beforeId = basemaps[i].id; break }
+  }
+  if (!beforeId) {
+    const layers = map.getStyle().layers ?? []
+    beforeId = layers.find(
+      (l) => l.id.endsWith('-fill') || l.id.endsWith('-line') || l.id.startsWith('query-result'),
+    )?.id
+  }
+  map.addLayer({
+    id: bm.id,
+    type: 'raster',
+    source: bm.id,
+    layout: { visibility: bm.visibleByDefault ? 'visible' : 'none' },
+  }, beforeId)
+}
+
+// Remove a raster basemap's layer + source. Idempotent.
+function removeRasterBasemap(map: maplibregl.Map, bm: BasemapConfig) {
+  if (map.getLayer(bm.id)) map.removeLayer(bm.id)
+  if (map.getSource(bm.id)) map.removeSource(bm.id)
+}
 
 // Walk any GeoJSON coordinate nesting and stretch the bounds to include it.
 function extendBounds(bounds: maplibregl.LngLatBounds, coords: any) {
@@ -28,6 +117,7 @@ interface MapContainerProps {
 export default function MapContainer({ config }: MapContainerProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapRef = useRef<maplibregl.Map | null>(null)
+  const { user } = useAuth()
 
   useEffect(() => {
     if (!containerRef.current) return
@@ -92,51 +182,13 @@ export default function MapContainer({ config }: MapContainerProps) {
     map.on('load', () => {
       // Basemaps first so they sit BENEATH the vector data layers.
       for (const bm of config.basemaps ?? []) {
-        map.addSource(bm.id, {
-          type: 'raster',
-          tiles: [bm.url],
-          tileSize: bm.tileSize ?? 256,
-          ...(bm.attribution ? { attribution: bm.attribution } : {}),
-        })
-        map.addLayer({
-          id: bm.id,
-          type: 'raster',
-          source: bm.id,
-          layout: { visibility: bm.visibleByDefault ? 'visible' : 'none' },
-        })
+        if (bm.requiresAuth) continue // auth-gated basemaps handled by a separate effect
+        addRasterBasemap(map, bm, config.basemaps ?? [])
       }
 
       for (const layer of config.layers) {
-        const url = `pmtiles://${PMTILES_BASE}${layer.id}.pmtiles`
-        const initialVisibility = layer.visibleByDefault ? 'visible' : 'none'
-
-        map.addSource(layer.id, { type: 'vector', url })
-
-        // Translucent fill — opacity comes from config.
-        map.addLayer({
-          id: `${layer.id}-fill`,
-          type: 'fill',
-          source: layer.id,
-          'source-layer': layer.id, // == tippecanoe -l name == file stem
-          paint: {
-            'fill-color': layer.color,
-            'fill-opacity': layer.opacity,
-          },
-          layout: { visibility: initialVisibility },
-        })
-
-        // Solid outline — same colour, full opacity.
-        map.addLayer({
-          id: `${layer.id}-line`,
-          type: 'line',
-          source: layer.id,
-          'source-layer': layer.id,
-          paint: {
-            'line-color': layer.color,
-            'line-width': 1,
-          },
-          layout: { visibility: initialVisibility },
-        })
+        if (layer.requiresAuth) continue // auth-gated layers handled by a separate effect
+        addVectorLayer(map, layer, config.layers)
       }
 
       // Click a feature -> show its attributes in a popup.
@@ -219,6 +271,27 @@ export default function MapContainer({ config }: MapContainerProps) {
       mapRef.current = null
     }
   }, [config])
+
+  // React to auth changes: add auth-gated layers on login, remove on logout —
+  // without rebuilding the whole map. (MOCK gate: visibility only, not security.)
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+    const apply = () => {
+      for (const layer of config.layers) {
+        if (!layer.requiresAuth) continue
+        if (user) addVectorLayer(map, layer, config.layers)
+        else removeVectorLayer(map, layer)
+      }
+      for (const bm of config.basemaps ?? []) {
+        if (!bm.requiresAuth) continue
+        if (user) addRasterBasemap(map, bm, config.basemaps ?? [])
+        else removeRasterBasemap(map, bm)
+      }
+    }
+    if (map.isStyleLoaded()) apply()
+    else map.once('load', apply)
+  }, [user, config])
 
   return <div ref={containerRef} style={{ width: '100%', height: '100%' }} />
 }
