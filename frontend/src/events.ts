@@ -38,6 +38,10 @@ export interface SpatialDrawGeometryEvent {
   geometry: DrawGeometry        // a geometry to display (drawn shape or buffer)
 }
 
+export interface MapZoomEvent {
+  zoom: number                  // the map's current zoom level
+}
+
 // The map of event-name -> payload type. Add more events here later.
 type Events = {
   layerToggle: LayerToggleEvent
@@ -51,6 +55,7 @@ type Events = {
   spatialDrawClear: void                    // panel -> map: erase the drawing
   spatialDrawComplete: SpatialDrawGeometryEvent // map -> panel: a shape was drawn
   spatialDrawGeometry: SpatialDrawGeometryEvent // panel -> map: show this geometry (buffer)
+  mapZoom: MapZoomEvent                     // map -> sidebar: current zoom changed
 }
 
 const bus = mitt<Events>()
@@ -158,4 +163,15 @@ export function emitSpatialDrawGeometry(event: SpatialDrawGeometryEvent) {
 export function onSpatialDrawGeometry(fn: (e: SpatialDrawGeometryEvent) => void): () => void {
   bus.on('spatialDrawGeometry', fn)
   return () => bus.off('spatialDrawGeometry', fn)
+}
+
+// --- map zoom -> sidebar --------------------------------------------------
+
+export function emitMapZoom(event: MapZoomEvent) {
+  bus.emit('mapZoom', event)
+}
+
+export function onMapZoom(fn: (e: MapZoomEvent) => void): () => void {
+  bus.on('mapZoom', fn)
+  return () => bus.off('mapZoom', fn)
 }

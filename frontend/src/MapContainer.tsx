@@ -9,6 +9,7 @@ import {
   onSpatialDrawStart, onSpatialDrawFinish, onSpatialDrawClear,
   onSpatialDrawGeometry, emitSpatialDrawComplete,
   emitFeatureSelect, onFeatureClear, onResultFeatureSelect,
+  emitMapZoom,
 } from './events'
 import { createSpatialDraw, type SpatialDraw } from './spatialDraw'
 import { GoToLatLngControl } from './GoToLatLngControl'
@@ -41,6 +42,8 @@ function addVectorLayer(map: maplibregl.Map, layer: LayerConfig, layers: LayerCo
     type: 'fill',
     source: layer.id,
     'source-layer': layer.id, // == tippecanoe -l name == file stem
+    ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
+    ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
     paint: {
       'fill-color': layer.color,
       'fill-opacity': layer.opacity,
@@ -52,6 +55,8 @@ function addVectorLayer(map: maplibregl.Map, layer: LayerConfig, layers: LayerCo
     type: 'line',
     source: layer.id,
     'source-layer': layer.id,
+    ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
+    ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
     paint: {
       'line-color': layer.color,
       'line-width': 1,
@@ -180,6 +185,13 @@ export default function MapContainer({ config }: MapContainerProps) {
         if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', v)
       }
     }))
+
+    // Broadcast the current zoom so the sidebar can grey out layers that are
+    // outside their allowed zoom range. Fire once now for the initial value.
+    const publishZoom = () => emitMapZoom({ zoom: map.getZoom() })
+    map.on('zoom', publishZoom)
+    subs.push(() => map.off('zoom', publishZoom))
+    publishZoom()
 
     // Quiet safety net: surface any MapLibre style/tile errors in the console.
     map.on('error', (e) => console.error('[map error]', e.error ?? e))

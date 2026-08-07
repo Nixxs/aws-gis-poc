@@ -1,16 +1,21 @@
 import { useState, useEffect } from 'react'
 import {
   List, ListItem, ListItemText, ListItemIcon,
-  Switch, Typography, Box,
+  Switch, Typography, Box, Tooltip,
 } from '@mui/material'
-import { useConfig } from './config'
+import { useConfig, isLayerInZoomRange } from './config'
 import { useAuth } from './auth'
-import { emitLayerToggle } from './events'
+import { emitLayerToggle, onMapZoom } from './events'
 
 export default function LayerList() {
   const { config, error } = useConfig()
   const { user } = useAuth()
   const [visible, setVisible] = useState<Record<string, boolean>>({})
+  const [zoom, setZoom] = useState(0)
+
+  // Track the map's current zoom so we can grey out layers that are outside
+  // their configured min/max zoom range.
+  useEffect(() => onMapZoom((e) => setZoom(e.zoom)), [])
 
   // Seed the on/off state once the config arrives (basemaps + data layers).
   useEffect(() => {
@@ -36,33 +41,58 @@ export default function LayerList() {
     (b) => !b.requiresAuth || user,
   )
 
-  // Render a toggle row for each item. `color` is optional (basemaps have none).
+  // Explain why a layer is greyed out, so the tooltip is actionable.
+  const zoomHint = (item: { minZoom?: number; maxZoom?: number }): string => {
+    if (item.minZoom != null && zoom < item.minZoom) {
+      return `Zoom in to level ${item.minZoom} to view this layer (currently ${zoom.toFixed(1)})`
+    }
+    if (item.maxZoom != null && zoom >= item.maxZoom) {
+      return `Zoom out below level ${item.maxZoom} to view this layer (currently ${zoom.toFixed(1)})`
+    }
+    return ''
+  }
+
+  // Render a toggle row for each item. `color` is optional (basemaps have none);
+  // `minZoom`/`maxZoom` are optional (only data layers restrict by zoom).
   const renderItems = (
-    items: Array<{ id: string; label: string; color?: string }>,
+    items: Array<{ id: string; label: string; color?: string; minZoom?: number; maxZoom?: number }>,
   ) => (
     <List dense>
-      {items.map((item) => (
-        <ListItem key={item.id} disablePadding sx={{ px: 1 }}>
-          <ListItemIcon sx={{ minWidth: 0 }}>
-            <Switch
-              edge="start"
-              size="small"
-              checked={visible[item.id] ?? false}
-              onChange={() => toggle(item.id)}
-            />
-          </ListItemIcon>
-          {/* colour swatch so you can see each layer's colour */}
-          {item.color && (
-            <Box
-              sx={{
-                width: 14, height: 14, mr: 1, borderRadius: '2px',
-                bgcolor: item.color, flexShrink: 0,
-              }}
-            />
-          )}
-          <ListItemText primary={item.label} />
-        </ListItem>
-      ))}
+      {items.map((item) => {
+        const inRange = isLayerInZoomRange(item, zoom)
+        const row = (
+          <ListItem
+            key={item.id}
+            disablePadding
+            sx={{ px: 1, opacity: inRange ? 1 : 0.4 }}
+          >
+            <ListItemIcon sx={{ minWidth: 0 }}>
+              <Switch
+                edge="start"
+                size="small"
+                checked={visible[item.id] ?? false}
+                onChange={() => toggle(item.id)}
+              />
+            </ListItemIcon>
+            {/* colour swatch so you can see each layer's colour */}
+            {item.color && (
+              <Box
+                sx={{
+                  width: 14, height: 14, mr: 1, borderRadius: '2px',
+                  bgcolor: item.color, flexShrink: 0,
+                }}
+              />
+            )}
+            <ListItemText primary={item.label} />
+          </ListItem>
+        )
+        // Wrap greyed-out rows in a tooltip explaining the zoom requirement.
+        return inRange ? row : (
+          <Tooltip key={item.id} title={zoomHint(item)} placement="right" arrow>
+            {row}
+          </Tooltip>
+        )
+      })}
     </List>
   )
 
