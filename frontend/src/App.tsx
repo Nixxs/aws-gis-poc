@@ -11,6 +11,7 @@ import FeatureInfoPanel from './FeatureInfoPanel'
 import LoginControl from './LoginControl'
 import { useConfig } from './config'
 import { useAuth } from './auth'
+import { warmUp } from './api'
 import { useState, useEffect } from 'react'
 
 const DRAWER_WIDTH = 340
@@ -24,6 +25,12 @@ export default function App() {
     useEffect(() => {
         setHasAuth(!!user)
     }, [user])
+
+    // Warm the Lambda container as soon as the app loads so the user's first
+    // query isn't slowed by a container cold start. Best-effort, runs once.
+    useEffect(() => {
+        warmUp()
+    }, [])
 
     return (
         <Box sx={

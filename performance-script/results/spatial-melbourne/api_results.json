@@ -1,0 +1,518 @@
+{
+  "runs": [
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 1,
+      "latency_ms": 1245.28,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 2,
+      "latency_ms": 1247.12,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 3,
+      "latency_ms": 1224.8,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 4,
+      "latency_ms": 1177.9,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 5,
+      "latency_ms": 1209.27,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 1,
+      "latency_ms": 1145.83,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 2,
+      "latency_ms": 4995.08,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 3,
+      "latency_ms": 5302.74,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 4,
+      "latency_ms": 4960.38,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-cbd-small",
+      "sequence": 5,
+      "latency_ms": 4939.55,
+      "status": 200,
+      "response_bytes": 1978055,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 1,
+      "latency_ms": 610.55,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 2,
+      "latency_ms": 597.31,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 3,
+      "latency_ms": 641.42,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 4,
+      "latency_ms": 610.31,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 5,
+      "latency_ms": 664.47,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 1,
+      "latency_ms": 912.02,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 2,
+      "latency_ms": 719.13,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 3,
+      "latency_ms": 1041.97,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 4,
+      "latency_ms": 1095.77,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-inner-medium",
+      "sequence": 5,
+      "latency_ms": 1031.78,
+      "status": 200,
+      "response_bytes": 2592448,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 1,
+      "latency_ms": 569.55,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 2,
+      "latency_ms": 602.5,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 3,
+      "latency_ms": 619.02,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 4,
+      "latency_ms": 578.35,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 5,
+      "latency_ms": 591.09,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 1,
+      "latency_ms": 692.36,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 2,
+      "latency_ms": 653.26,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 3,
+      "latency_ms": 852.46,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 4,
+      "latency_ms": 792.88,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-large",
+      "sequence": 5,
+      "latency_ms": 846.1,
+      "status": 200,
+      "response_bytes": 2350465,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 1,
+      "latency_ms": 554.29,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 2,
+      "latency_ms": 593.7,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 3,
+      "latency_ms": 577.13,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 4,
+      "latency_ms": 559.66,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 5,
+      "latency_ms": 602.08,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 1,
+      "latency_ms": 703.57,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 2,
+      "latency_ms": 833.64,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 3,
+      "latency_ms": 866.21,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 4,
+      "latency_ms": 862.36,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "parcels-metro-huge",
+      "sequence": 5,
+      "latency_ms": 784.4,
+      "status": 200,
+      "response_bytes": 2276413,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    }
+  ],
+  "summary": [
+    {
+      "case": "parcels-cbd-small",
+      "concurrency": 1,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 0.82,
+      "mean_latency_ms": 1220.87,
+      "p50_latency_ms": 1224.8,
+      "p95_latency_ms": 1246.75,
+      "p99_latency_ms": 1247.05,
+      "minimum_latency_ms": 1177.9,
+      "maximum_latency_ms": 1247.12
+    },
+    {
+      "case": "parcels-cbd-small",
+      "concurrency": 5,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 0.94,
+      "mean_latency_ms": 4268.72,
+      "p50_latency_ms": 4960.38,
+      "p95_latency_ms": 5241.21,
+      "p99_latency_ms": 5290.43,
+      "minimum_latency_ms": 1145.83,
+      "maximum_latency_ms": 5302.74
+    },
+    {
+      "case": "parcels-inner-medium",
+      "concurrency": 1,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 1.6,
+      "mean_latency_ms": 624.81,
+      "p50_latency_ms": 610.55,
+      "p95_latency_ms": 659.86,
+      "p99_latency_ms": 663.55,
+      "minimum_latency_ms": 597.31,
+      "maximum_latency_ms": 664.47
+    },
+    {
+      "case": "parcels-inner-medium",
+      "concurrency": 5,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 4.55,
+      "mean_latency_ms": 960.13,
+      "p50_latency_ms": 1031.78,
+      "p95_latency_ms": 1085.01,
+      "p99_latency_ms": 1093.62,
+      "minimum_latency_ms": 719.13,
+      "maximum_latency_ms": 1095.77
+    },
+    {
+      "case": "parcels-metro-large",
+      "concurrency": 1,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 1.69,
+      "mean_latency_ms": 592.1,
+      "p50_latency_ms": 591.09,
+      "p95_latency_ms": 615.72,
+      "p99_latency_ms": 618.36,
+      "minimum_latency_ms": 569.55,
+      "maximum_latency_ms": 619.02
+    },
+    {
+      "case": "parcels-metro-large",
+      "concurrency": 5,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 5.86,
+      "mean_latency_ms": 767.41,
+      "p50_latency_ms": 792.88,
+      "p95_latency_ms": 851.19,
+      "p99_latency_ms": 852.21,
+      "minimum_latency_ms": 653.26,
+      "maximum_latency_ms": 852.46
+    },
+    {
+      "case": "parcels-metro-huge",
+      "concurrency": 1,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 1.73,
+      "mean_latency_ms": 577.37,
+      "p50_latency_ms": 577.13,
+      "p95_latency_ms": 600.4,
+      "p99_latency_ms": 601.74,
+      "minimum_latency_ms": 554.29,
+      "maximum_latency_ms": 602.08
+    },
+    {
+      "case": "parcels-metro-huge",
+      "concurrency": 5,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 5.76,
+      "mean_latency_ms": 810.04,
+      "p50_latency_ms": 833.64,
+      "p95_latency_ms": 865.44,
+      "p99_latency_ms": 866.06,
+      "minimum_latency_ms": 703.57,
+      "maximum_latency_ms": 866.21
+    }
+  ]
+}

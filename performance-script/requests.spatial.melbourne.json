@@ -1,0 +1,94 @@
+{
+  "_comment": "Large-area spatial-query stress cases over the ~5GB parcels layer, centred on metropolitan Melbourne. Sizes escalate from a CBD block to the whole metro bbox to see whether the query returns, hits the 1000-feature cap, times out, or OOMs. buffer 0 = raw polygon.",
+  "base_url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+  "requests": [
+    {
+      "name": "parcels-cbd-small",
+      "enabled": true,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "spatial-query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_parcel",
+        "buffer": 0,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [144.955, -37.820],
+            [144.975, -37.820],
+            [144.975, -37.805],
+            [144.955, -37.805],
+            [144.955, -37.820]
+          ]]
+        }
+      }
+    },
+    {
+      "name": "parcels-inner-medium",
+      "enabled": true,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "spatial-query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_parcel",
+        "buffer": 0,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [144.900, -37.860],
+            [145.020, -37.860],
+            [145.020, -37.760],
+            [144.900, -37.760],
+            [144.900, -37.860]
+          ]]
+        }
+      }
+    },
+    {
+      "name": "parcels-metro-large",
+      "enabled": true,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "spatial-query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_parcel",
+        "buffer": 0,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [144.700, -38.050],
+            [145.300, -38.050],
+            [145.300, -37.650],
+            [144.700, -37.650],
+            [144.700, -38.050]
+          ]]
+        }
+      }
+    },
+    {
+      "name": "parcels-metro-huge",
+      "enabled": true,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "spatial-query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_parcel",
+        "buffer": 0,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [[
+            [144.400, -38.300],
+            [145.600, -38.300],
+            [145.600, -37.500],
+            [144.400, -37.500],
+            [144.400, -38.300]
+          ]]
+        }
+      }
+    }
+  ]
+}
