@@ -8,6 +8,7 @@ import { onLayerToggle, onQueryResult, onClearQuery } from './events'
 import {
   onSpatialDrawStart, onSpatialDrawFinish, onSpatialDrawClear,
   onSpatialDrawGeometry, emitSpatialDrawComplete,
+  emitFeatureSelect, onFeatureClear, onResultFeatureSelect,
 } from './events'
 import { createSpatialDraw, type SpatialDraw } from './spatialDraw'
 import { GoToLatLngControl } from './GoToLatLngControl'
@@ -229,19 +230,26 @@ export default function MapContainer({ config }: MapContainerProps) {
           filter,
         })
 
-        const rows = Object.entries(feature.properties ?? {})
-          .map(([k, v]) => `<tr><td><b>${k}</b></td><td>${v}</td></tr>`)
-          .join('')
-        const popup = new maplibregl.Popup({ maxWidth: '320px' })
-          .setLngLat(e.lngLat)
-          .setHTML(`<table>${rows}</table>`)
-          .addTo(map)
-        // Clear the highlight when the popup is dismissed.
-        popup.on('close', () => { if (map.getLayer('highlight')) map.removeLayer('highlight') })
+        // Show the attributes in the docked FeatureInfoPanel (not a popup).
+        emitFeatureSelect({
+          layer: String(feature.source),
+          properties: feature.properties ?? {},
+        })
       })
-      // Hint that features are clickable.
-      map.on('mouseenter', fillLayerIds, () => (map.getCanvas().style.cursor = 'pointer'))
-      map.on('mouseleave', fillLayerIds, () => (map.getCanvas().style.cursor = ''))
+      // Hint that features are clickable — but not while drawing (keep the crosshair).
+      map.on('mouseenter', fillLayerIds, () => {
+        if (draw?.isActive()) return
+        map.getCanvas().style.cursor = 'pointer'
+      })
+      map.on('mouseleave', fillLayerIds, () => {
+        if (draw?.isActive()) return
+        map.getCanvas().style.cursor = ''
+      })
+
+      // Panel dismissed -> drop the highlight outline.
+      subs.push(onFeatureClear(() => {
+        if (map.getLayer('highlight')) map.removeLayer('highlight')
+      }))
 
       // Query results: a GeoJSON source the QueryPanel feeds via events.
       const EMPTY = { type: 'FeatureCollection' as const, features: [] }
@@ -259,9 +267,30 @@ export default function MapContainer({ config }: MapContainerProps) {
         paint: { 'line-color': '#e91e63', 'line-width': 2 },
       })
 
+      // A single highlighted result (from clicking a row in the attribute table).
+      map.addSource('result-highlight', { type: 'geojson', data: EMPTY })
+      map.addLayer({
+        id: 'result-highlight-fill',
+        type: 'fill',
+        source: 'result-highlight',
+        paint: { 'fill-color': '#ffeb3b', 'fill-opacity': 0.4 },
+      })
+      map.addLayer({
+        id: 'result-highlight-line',
+        type: 'line',
+        source: 'result-highlight',
+        paint: { 'line-color': '#ffeb3b', 'line-width': 3 },
+      })
+
+      const clearResultHighlight = () => {
+        const src = map.getSource('result-highlight') as maplibregl.GeoJSONSource
+        src?.setData(EMPTY as any)
+      }
+
       subs.push(onQueryResult((e) => {
         const source = map.getSource('query-result') as maplibregl.GeoJSONSource
         source.setData(e.geojson as any)
+        clearResultHighlight() // a fresh result set clears any previous row highlight
         // Zoom to the results.
         const bounds = new maplibregl.LngLatBounds()
         for (const f of e.geojson.features) {
@@ -273,6 +302,25 @@ export default function MapContainer({ config }: MapContainerProps) {
       subs.push(onClearQuery(() => {
         const source = map.getSource('query-result') as maplibregl.GeoJSONSource
         source.setData(EMPTY as any)
+        clearResultHighlight()
+      }))
+
+      // Click a row in the attribute table -> highlight that feature and pan to it.
+      subs.push(onResultFeatureSelect((e) => {
+        const geometry = e.feature?.geometry as any
+        if (!geometry) return
+        const src = map.getSource('result-highlight') as maplibregl.GeoJSONSource
+        src.setData({ type: 'FeatureCollection', features: [e.feature as any] } as any)
+
+        const bounds = new maplibregl.LngLatBounds()
+        extendBounds(bounds, geometry.coordinates)
+        if (bounds.isEmpty()) return
+        // A point has zero-area bounds; ease to it at a sensible zoom instead.
+        if (geometry.type === 'Point') {
+          map.easeTo({ center: bounds.getCenter(), zoom: Math.max(map.getZoom(), 15) })
+        } else {
+          map.fitBounds(bounds, { padding: 60, maxZoom: 16 })
+        }
       }))
 
       // Spatial-draw tool: the SpatialQueryPanel drives it over the event bus.

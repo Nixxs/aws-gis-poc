@@ -6,7 +6,7 @@ import {
 import CloseIcon from '@mui/icons-material/Close'
 import UnfoldLessIcon from '@mui/icons-material/UnfoldLess'
 import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore'
-import { onQueryResult, onClearQuery } from './events'
+import { onQueryResult, onClearQuery, emitResultFeatureSelect } from './events'
 import type { FeatureCollection } from './api'
 
 type Feature = FeatureCollection['features'][number]
@@ -22,22 +22,31 @@ export default function AttributeTable() {
   const [layer, setLayer] = useState('')
   const [features, setFeatures] = useState<Feature[]>([])
   const [collapsed, setCollapsed] = useState(false)
+  const [selected, setSelected] = useState<number | null>(null)
 
   useEffect(() => {
     const offResult = onQueryResult((e) => {
       setLayer(e.layer)
       setFeatures(e.geojson.features ?? [])
       setCollapsed(false)
+      setSelected(null)
     })
     const offClear = onClearQuery(() => {
       setFeatures([])
       setLayer('')
+      setSelected(null)
     })
     return () => {
       offResult()
       offClear()
     }
   }, [])
+
+  // Click a row -> highlight that feature on the map and pan to it.
+  const selectRow = (index: number, feature: Feature) => {
+    setSelected(index)
+    emitResultFeatureSelect({ feature })
+  }
 
   // Column headers = the union of every feature's property keys, first-seen order.
   const columns = useMemo(() => {
@@ -57,7 +66,7 @@ export default function AttributeTable() {
         position: 'absolute',
         left: 8,
         right: 8,
-        bottom: 8,
+        bottom: 40,     // raised off the bottom to clear the scale bar + attribution text
         maxHeight: collapsed ? 'auto' : '42%',
         display: 'flex',
         flexDirection: 'column',
@@ -108,7 +117,13 @@ export default function AttributeTable() {
             </TableHead>
             <TableBody>
               {features.map((f, i) => (
-                <TableRow key={i} hover>
+                <TableRow
+                  key={i}
+                  hover
+                  selected={selected === i}
+                  onClick={() => selectRow(i, f)}
+                  sx={{ cursor: 'pointer' }}
+                >
                   {columns.map((col) => (
                     <TableCell key={col} sx={{ whiteSpace: 'nowrap' }}>
                       {formatValue(f.properties?.[col])}

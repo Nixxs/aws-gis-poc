@@ -97,6 +97,15 @@ export function createSpatialDraw(
     renderProgress()
   }
 
+  // Double-click finishes a polygon. The dblclick is preceded by two `click`
+  // events, so a near-duplicate vertex was just added — drop it before closing.
+  function onDblClick(e: maplibregl.MapMouseEvent) {
+    if (mode !== 'polygon') return
+    e.preventDefault()
+    if (coords.length >= 2) coords.pop()
+    finish()
+  }
+
   function start(next: DrawMode) {
     clear()
     mode = next
@@ -120,6 +129,7 @@ export function createSpatialDraw(
   }
 
   map.on('click', onClick)
+  map.on('dblclick', onDblClick)
 
   return {
     start,
@@ -129,6 +139,7 @@ export function createSpatialDraw(
     isActive: () => mode !== null,
     destroy() {
       map.off('click', onClick)
+      map.off('dblclick', onDblClick)
       for (const id of [FILL, LINE, PT]) if (map.getLayer(id)) map.removeLayer(id)
       if (map.getSource(SRC)) map.removeSource(SRC)
     },

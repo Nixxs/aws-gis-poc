@@ -14,6 +14,15 @@ export interface QueryResultEvent {
   geojson: FeatureCollection    // features to draw on the map
 }
 
+export interface FeatureSelectEvent {
+  layer: string                          // the layer/source the feature belongs to
+  properties: Record<string, unknown>    // the clicked feature's attributes
+}
+
+export interface ResultFeatureSelectEvent {
+  feature: FeatureCollection['features'][number]  // a result row to highlight + pan to
+}
+
 // A loose GeoJSON geometry — enough for the draw tool and spatial query.
 export type DrawGeometry = {
   type: string
@@ -34,6 +43,9 @@ type Events = {
   layerToggle: LayerToggleEvent
   queryResult: QueryResultEvent
   clearQuery: void
+  featureSelect: FeatureSelectEvent         // map -> panel: a feature was clicked
+  featureClear: void                        // panel -> map: dismiss the selection
+  resultFeatureSelect: ResultFeatureSelectEvent // table -> map: highlight + pan to a result
   spatialDrawStart: SpatialDrawStartEvent   // panel -> map: begin drawing
   spatialDrawFinish: void                   // panel -> map: close the polygon
   spatialDrawClear: void                    // panel -> map: erase the drawing
@@ -68,6 +80,37 @@ export function emitClearQuery() {
 export function onClearQuery(fn: () => void): () => void {
   bus.on('clearQuery', fn)
   return () => bus.off('clearQuery', fn)
+}
+
+// --- feature click / info panel -------------------------------------------
+
+export function emitFeatureSelect(event: FeatureSelectEvent) {
+  bus.emit('featureSelect', event)
+}
+
+export function onFeatureSelect(fn: (e: FeatureSelectEvent) => void): () => void {
+  bus.on('featureSelect', fn)
+  return () => bus.off('featureSelect', fn)
+}
+
+export function emitFeatureClear() {
+  bus.emit('featureClear')
+}
+
+export function onFeatureClear(fn: () => void): () => void {
+  bus.on('featureClear', fn)
+  return () => bus.off('featureClear', fn)
+}
+
+// --- results table row -> map --------------------------------------------
+
+export function emitResultFeatureSelect(event: ResultFeatureSelectEvent) {
+  bus.emit('resultFeatureSelect', event)
+}
+
+export function onResultFeatureSelect(fn: (e: ResultFeatureSelectEvent) => void): () => void {
+  bus.on('resultFeatureSelect', fn)
+  return () => bus.off('resultFeatureSelect', fn)
 }
 
 // --- spatial draw ---------------------------------------------------------
