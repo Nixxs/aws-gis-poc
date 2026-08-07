@@ -14,6 +14,12 @@ export interface QueryResultEvent {
   geojson: FeatureCollection    // features to draw on the map
 }
 
+// Results from a single action that queried several layers at once (e.g. the
+// buffer-intersect tool). Each entry becomes its own tab in the attribute table.
+export interface QueryResultMultiEvent {
+  results: Array<{ layer: string; label?: string; geojson: FeatureCollection }>
+}
+
 export interface FeatureSelectEvent {
   layer: string                          // the layer/source the feature belongs to
   properties: Record<string, unknown>    // the clicked feature's attributes
@@ -46,6 +52,7 @@ export interface MapZoomEvent {
 type Events = {
   layerToggle: LayerToggleEvent
   queryResult: QueryResultEvent
+  queryResultMulti: QueryResultMultiEvent   // buffer-intersect: many layers -> tabs
   clearQuery: void
   featureSelect: FeatureSelectEvent         // map -> panel: a feature was clicked
   featureClear: void                        // panel -> map: dismiss the selection
@@ -76,6 +83,15 @@ export function emitQueryResult(event: QueryResultEvent) {
 export function onQueryResult(fn: (e: QueryResultEvent) => void): () => void {
   bus.on('queryResult', fn)
   return () => bus.off('queryResult', fn)
+}
+
+export function emitQueryResultMulti(event: QueryResultMultiEvent) {
+  bus.emit('queryResultMulti', event)
+}
+
+export function onQueryResultMulti(fn: (e: QueryResultMultiEvent) => void): () => void {
+  bus.on('queryResultMulti', fn)
+  return () => bus.off('queryResultMulti', fn)
 }
 
 export function emitClearQuery() {

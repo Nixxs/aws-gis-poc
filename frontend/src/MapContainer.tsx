@@ -4,7 +4,7 @@ import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { AppConfig, LayerConfig, BasemapConfig } from './config'
 import { useAuth } from './auth'
-import { onLayerToggle, onQueryResult, onClearQuery } from './events'
+import { onLayerToggle, onQueryResult, onQueryResultMulti, onClearQuery } from './events'
 import {
   onSpatialDrawStart, onSpatialDrawFinish, onSpatialDrawClear,
   onSpatialDrawGeometry, emitSpatialDrawComplete,
@@ -309,6 +309,20 @@ export default function MapContainer({ config }: MapContainerProps) {
           if (f.geometry) extendBounds(bounds, (f.geometry as any).coordinates)
         }
         if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, maxZoom: 14 })
+      }))
+
+      // Multi-layer results (buffer intersect): draw every layer's features into
+      // the same result source and zoom to the combined extent.
+      subs.push(onQueryResultMulti((e) => {
+        const features = e.results.flatMap((r) => r.geojson.features ?? [])
+        const source = map.getSource('query-result') as maplibregl.GeoJSONSource
+        source.setData({ type: 'FeatureCollection', features } as any)
+        clearResultHighlight()
+        const bounds = new maplibregl.LngLatBounds()
+        for (const f of features) {
+          if (f.geometry) extendBounds(bounds, (f.geometry as any).coordinates)
+        }
+        if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, maxZoom: 16 })
       }))
 
       subs.push(onClearQuery(() => {

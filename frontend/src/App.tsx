@@ -6,6 +6,7 @@ import MapContainer from './MapContainer'
 import LayerList from './LayerList'
 import QueryPanel from './QueryPanel'
 import SpatialQueryPanel from './SpatialQueryPanel'
+import BufferIntersectPanel from './BufferIntersectPanel'
 import AttributeTable from './AttributeTable'
 import FeatureInfoPanel from './FeatureInfoPanel'
 import LoginControl from './LoginControl'
@@ -101,6 +102,8 @@ export default function App() {
                     <QueryPanel />
                     <Divider sx={{ my: 2 }} />
                     <SpatialQueryPanel />
+                    <Divider sx={{ my: 2 }} />
+                    <BufferIntersectPanel />
                 </Box>
             </Drawer>
 

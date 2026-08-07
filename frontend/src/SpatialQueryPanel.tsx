@@ -15,8 +15,8 @@ import {
 } from './events'
 
 // The UI intentionally hides the buffer distance; the route still takes it, so
-// we send a small fixed buffer here. Change this one value to tune the search.
-const DEFAULT_BUFFER_METERS = 100
+// we send a fixed buffer here. Set to 0 for a pure intersect (no buffering).
+const DEFAULT_BUFFER_METERS = 0
 
 export default function SpatialQueryPanel() {
   const { config } = useConfig()
@@ -173,7 +173,9 @@ export default function SpatialQueryPanel() {
         </Stack>
 
         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-          Finds features within {DEFAULT_BUFFER_METERS} m of your selection.
+          {DEFAULT_BUFFER_METERS > 0
+            ? `Finds features within ${DEFAULT_BUFFER_METERS} m of your selection.`
+            : 'Finds features that intersect your selection.'}
         </Typography>
 
         {error && <Alert severity="error">{error}</Alert>}
