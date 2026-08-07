@@ -44,6 +44,19 @@ def connection():
     con.execute(f"SET extension_directory='{_EXT_DIR}'")
     con.execute("SET home_directory='/tmp'")
     con.execute("SET temp_directory='/tmp'")
+    # Cap DuckDB's buffer pool below the Lambda memory ceiling so a large scan
+    # (e.g. spatial-query over the ~5GB parcels layer, which may have to read
+    # most of the file when matches are sparse) streams and spills to /tmp
+    # instead of growing until the whole sandbox hits Runtime.OutOfMemory. The
+    # budget is read from the Lambda-provided env var so it auto-scales if the
+    # function's memory-size changes; we leave headroom for the Python runtime
+    # and result serialisation.
+    lambda_mem_mb = int(os.environ.get("AWS_LAMBDA_FUNCTION_MEMORY_SIZE", "2048"))
+    duckdb_mem_mb = max(256, int(lambda_mem_mb * 0.65))
+    con.execute(f"SET memory_limit='{duckdb_mem_mb}MB'")
+    # A drawn-area feature set has no meaningful order, so don't spend memory
+    # buffering rows just to preserve input order across a big streaming scan.
+    con.execute("SET preserve_insertion_order=false")
     con.execute("LOAD httpfs")
     con.execute("LOAD aws")
     # spatial provides ST_AsGeoJSON / ST_GeomFromWKB for geometry output.
