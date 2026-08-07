@@ -14,11 +14,43 @@ export interface QueryResultEvent {
   geojson: FeatureCollection    // features to draw on the map
 }
 
+export interface FeatureSelectEvent {
+  layer: string                          // the layer/source the feature belongs to
+  properties: Record<string, unknown>    // the clicked feature's attributes
+}
+
+export interface ResultFeatureSelectEvent {
+  feature: FeatureCollection['features'][number]  // a result row to highlight + pan to
+}
+
+// A loose GeoJSON geometry — enough for the draw tool and spatial query.
+export type DrawGeometry = {
+  type: string
+  coordinates?: unknown
+  geometries?: unknown[]
+}
+
+export interface SpatialDrawStartEvent {
+  mode: 'point' | 'polygon'     // what shape the user is about to draw
+}
+
+export interface SpatialDrawGeometryEvent {
+  geometry: DrawGeometry        // a geometry to display (drawn shape or buffer)
+}
+
 // The map of event-name -> payload type. Add more events here later.
 type Events = {
   layerToggle: LayerToggleEvent
   queryResult: QueryResultEvent
   clearQuery: void
+  featureSelect: FeatureSelectEvent         // map -> panel: a feature was clicked
+  featureClear: void                        // panel -> map: dismiss the selection
+  resultFeatureSelect: ResultFeatureSelectEvent // table -> map: highlight + pan to a result
+  spatialDrawStart: SpatialDrawStartEvent   // panel -> map: begin drawing
+  spatialDrawFinish: void                   // panel -> map: close the polygon
+  spatialDrawClear: void                    // panel -> map: erase the drawing
+  spatialDrawComplete: SpatialDrawGeometryEvent // map -> panel: a shape was drawn
+  spatialDrawGeometry: SpatialDrawGeometryEvent // panel -> map: show this geometry (buffer)
 }
 
 const bus = mitt<Events>()
@@ -48,4 +80,82 @@ export function emitClearQuery() {
 export function onClearQuery(fn: () => void): () => void {
   bus.on('clearQuery', fn)
   return () => bus.off('clearQuery', fn)
+}
+
+// --- feature click / info panel -------------------------------------------
+
+export function emitFeatureSelect(event: FeatureSelectEvent) {
+  bus.emit('featureSelect', event)
+}
+
+export function onFeatureSelect(fn: (e: FeatureSelectEvent) => void): () => void {
+  bus.on('featureSelect', fn)
+  return () => bus.off('featureSelect', fn)
+}
+
+export function emitFeatureClear() {
+  bus.emit('featureClear')
+}
+
+export function onFeatureClear(fn: () => void): () => void {
+  bus.on('featureClear', fn)
+  return () => bus.off('featureClear', fn)
+}
+
+// --- results table row -> map --------------------------------------------
+
+export function emitResultFeatureSelect(event: ResultFeatureSelectEvent) {
+  bus.emit('resultFeatureSelect', event)
+}
+
+export function onResultFeatureSelect(fn: (e: ResultFeatureSelectEvent) => void): () => void {
+  bus.on('resultFeatureSelect', fn)
+  return () => bus.off('resultFeatureSelect', fn)
+}
+
+// --- spatial draw ---------------------------------------------------------
+
+export function emitSpatialDrawStart(event: SpatialDrawStartEvent) {
+  bus.emit('spatialDrawStart', event)
+}
+
+export function onSpatialDrawStart(fn: (e: SpatialDrawStartEvent) => void): () => void {
+  bus.on('spatialDrawStart', fn)
+  return () => bus.off('spatialDrawStart', fn)
+}
+
+export function emitSpatialDrawFinish() {
+  bus.emit('spatialDrawFinish')
+}
+
+export function onSpatialDrawFinish(fn: () => void): () => void {
+  bus.on('spatialDrawFinish', fn)
+  return () => bus.off('spatialDrawFinish', fn)
+}
+
+export function emitSpatialDrawClear() {
+  bus.emit('spatialDrawClear')
+}
+
+export function onSpatialDrawClear(fn: () => void): () => void {
+  bus.on('spatialDrawClear', fn)
+  return () => bus.off('spatialDrawClear', fn)
+}
+
+export function emitSpatialDrawComplete(event: SpatialDrawGeometryEvent) {
+  bus.emit('spatialDrawComplete', event)
+}
+
+export function onSpatialDrawComplete(fn: (e: SpatialDrawGeometryEvent) => void): () => void {
+  bus.on('spatialDrawComplete', fn)
+  return () => bus.off('spatialDrawComplete', fn)
+}
+
+export function emitSpatialDrawGeometry(event: SpatialDrawGeometryEvent) {
+  bus.emit('spatialDrawGeometry', event)
+}
+
+export function onSpatialDrawGeometry(fn: (e: SpatialDrawGeometryEvent) => void): () => void {
+  bus.on('spatialDrawGeometry', fn)
+  return () => bus.off('spatialDrawGeometry', fn)
 }

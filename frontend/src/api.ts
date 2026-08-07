@@ -42,6 +42,19 @@ async function call<T>(params: Record<string, string>): Promise<T> {
   return data as T
 }
 
+// POST for actions whose payload (e.g. a drawn geometry) is too big/complex for
+// the query string. The Lambda router reads params from the JSON body too.
+async function callPost<T>(body: Record<string, unknown>): Promise<T> {
+  const res = await fetch(API_BASE, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data?.error ?? `request failed: ${res.status}`)
+  return data as T
+}
+
 export function describeLayer(layer: string) {
   return call<DescribeLayerResult>({ action: 'describe-layer', layer })
 }
@@ -64,5 +77,25 @@ export function queryLayer(layer: string, where: string, recordCount = 1000) {
     where,
     f: 'geojson',
     resultRecordCount: String(recordCount),
+  })
+}
+
+// A spatial-query response: a FeatureCollection plus the buffered geometry that
+// was intersected (so the map can outline the search area).
+export type SpatialQueryResult = FeatureCollection & {
+  layer: string
+  count: number
+  bufferMeters: number
+  queryGeometry: unknown | null
+}
+
+// Find features in `layer` that intersect the drawn `geometry`, optionally
+// buffered by `bufferMeters`. Sent as POST because the geometry can be large.
+export function spatialQuery(layer: string, geometry: unknown, bufferMeters = 0) {
+  return callPost<SpatialQueryResult>({
+    action: 'spatial-query',
+    layer,
+    geometry,
+    buffer: bufferMeters,
   })
 }
