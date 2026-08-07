@@ -43,7 +43,7 @@ from queries._db import connection, layer_columns, s3_uri, validate_layer
 
 # Server-side cap on rows returned, mirroring Esri's maxRecordCount.
 MAX_RECORD_COUNT = 1000
-DEFAULT_RECORD_COUNT = 200
+DEFAULT_RECORD_COUNT = 1000
 
 # DuckDB errors that mean "the user's query is bad" (-> 400) rather than an
 # infrastructure failure (-> 500).

@@ -1,0 +1,70 @@
+{
+  "runs": [
+    {
+      "case": "spatial-query-point-parcels",
+      "sequence": 1,
+      "latency_ms": 4254.13,
+      "status": 200,
+      "response_bytes": 86464,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-parcels",
+      "sequence": 2,
+      "latency_ms": 4162.8,
+      "status": 200,
+      "response_bytes": 86464,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-parcels",
+      "sequence": 3,
+      "latency_ms": 4196.6,
+      "status": 200,
+      "response_bytes": 86464,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-parcels",
+      "sequence": 4,
+      "latency_ms": 4225.16,
+      "status": 200,
+      "response_bytes": 86464,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-parcels",
+      "sequence": 5,
+      "latency_ms": 4193.74,
+      "status": 200,
+      "response_bytes": 86464,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    }
+  ],
+  "summary": [
+    {
+      "case": "spatial-query-point-parcels",
+      "concurrency": 1,
+      "requests": 5,
+      "successful_requests": 5,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 0.24,
+      "mean_latency_ms": 4206.49,
+      "p50_latency_ms": 4196.6,
+      "p95_latency_ms": 4248.34,
+      "p99_latency_ms": 4252.97,
+      "minimum_latency_ms": 4162.8,
+      "maximum_latency_ms": 4254.13
+    }
+  ]
+}

@@ -14,6 +14,12 @@ export interface QueryResultEvent {
   geojson: FeatureCollection    // features to draw on the map
 }
 
+// Results from a single action that queried several layers at once (e.g. the
+// buffer-intersect tool). Each entry becomes its own tab in the attribute table.
+export interface QueryResultMultiEvent {
+  results: Array<{ layer: string; label?: string; geojson: FeatureCollection }>
+}
+
 export interface FeatureSelectEvent {
   layer: string                          // the layer/source the feature belongs to
   properties: Record<string, unknown>    // the clicked feature's attributes
@@ -38,10 +44,15 @@ export interface SpatialDrawGeometryEvent {
   geometry: DrawGeometry        // a geometry to display (drawn shape or buffer)
 }
 
+export interface MapZoomEvent {
+  zoom: number                  // the map's current zoom level
+}
+
 // The map of event-name -> payload type. Add more events here later.
 type Events = {
   layerToggle: LayerToggleEvent
   queryResult: QueryResultEvent
+  queryResultMulti: QueryResultMultiEvent   // buffer-intersect: many layers -> tabs
   clearQuery: void
   featureSelect: FeatureSelectEvent         // map -> panel: a feature was clicked
   featureClear: void                        // panel -> map: dismiss the selection
@@ -51,6 +62,7 @@ type Events = {
   spatialDrawClear: void                    // panel -> map: erase the drawing
   spatialDrawComplete: SpatialDrawGeometryEvent // map -> panel: a shape was drawn
   spatialDrawGeometry: SpatialDrawGeometryEvent // panel -> map: show this geometry (buffer)
+  mapZoom: MapZoomEvent                     // map -> sidebar: current zoom changed
 }
 
 const bus = mitt<Events>()
@@ -71,6 +83,15 @@ export function emitQueryResult(event: QueryResultEvent) {
 export function onQueryResult(fn: (e: QueryResultEvent) => void): () => void {
   bus.on('queryResult', fn)
   return () => bus.off('queryResult', fn)
+}
+
+export function emitQueryResultMulti(event: QueryResultMultiEvent) {
+  bus.emit('queryResultMulti', event)
+}
+
+export function onQueryResultMulti(fn: (e: QueryResultMultiEvent) => void): () => void {
+  bus.on('queryResultMulti', fn)
+  return () => bus.off('queryResultMulti', fn)
 }
 
 export function emitClearQuery() {
@@ -158,4 +179,15 @@ export function emitSpatialDrawGeometry(event: SpatialDrawGeometryEvent) {
 export function onSpatialDrawGeometry(fn: (e: SpatialDrawGeometryEvent) => void): () => void {
   bus.on('spatialDrawGeometry', fn)
   return () => bus.off('spatialDrawGeometry', fn)
+}
+
+// --- map zoom -> sidebar --------------------------------------------------
+
+export function emitMapZoom(event: MapZoomEvent) {
+  bus.emit('mapZoom', event)
+}
+
+export function onMapZoom(fn: (e: MapZoomEvent) => void): () => void {
+  bus.on('mapZoom', fn)
+  return () => bus.off('mapZoom', fn)
 }

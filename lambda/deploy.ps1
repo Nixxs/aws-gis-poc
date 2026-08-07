@@ -122,7 +122,7 @@ if (-not (Test-AWS lambda get-function --function-name $functionName --region $c
     for ($i = 0; $i -lt 12; $i++) {
         $out = & aws lambda create-function --function-name $functionName --region $cfg.REGION `
             --package-type Image --code "ImageUri=$imageUri" --role $roleArn `
-            --architectures x86_64 --timeout 60 --memory-size 2048 --environment $envVars 2>&1
+            --architectures x86_64 --timeout 60 --memory-size 3008 --ephemeral-storage Size=2048 --environment $envVars 2>&1
         if ($LASTEXITCODE -eq 0) { $created = $true; break }
         if ($out -notmatch "cannot be assumed|InvalidParameterValueException.*role") {
             throw "create-function failed: $out"
@@ -137,7 +137,7 @@ if (-not (Test-AWS lambda get-function --function-name $functionName --region $c
         --image-uri $imageUri
     Invoke-AWS lambda wait function-updated --function-name $functionName --region $cfg.REGION
     Invoke-AWS lambda update-function-configuration --function-name $functionName --region $cfg.REGION `
-        --role $roleArn --timeout 60 --memory-size 2048 --environment $envVars
+        --role $roleArn --timeout 60 --memory-size 3008 --ephemeral-storage Size=2048 --environment $envVars
 }
 Invoke-AWS lambda wait function-active --function-name $functionName --region $cfg.REGION
 

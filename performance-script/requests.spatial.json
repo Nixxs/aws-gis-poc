@@ -1,0 +1,62 @@
+{
+  "_comment": "Spatial-query performance cases. Mirrors the frontend SpatialQueryPanel request shape: action=spatial-query in the query string, body carries layer + GeoJSON geometry + buffer (metres, frontend default 100). Point geometry uses a known-hit location (144.29780,-37.82960). Two layers are tested: a normal environmental layer and the ~5GB parcels layer to expose the heavy-layer worst case.",
+  "base_url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+  "requests": [
+    {
+      "name": "spatial-query-point-env",
+      "enabled": true,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "spatial-query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_env_environmental_significance",
+        "buffer": 100,
+        "geometry": {
+          "type": "Point",
+          "coordinates": [144.29780, -37.82960]
+        }
+      }
+    },
+    {
+      "name": "spatial-query-polygon-env",
+      "enabled": true,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "spatial-query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_env_environmental_significance",
+        "buffer": 0,
+        "geometry": {
+          "type": "Polygon",
+          "coordinates": [
+            [
+              [144.290, -37.835],
+              [144.305, -37.835],
+              [144.305, -37.822],
+              [144.290, -37.822],
+              [144.290, -37.835]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "name": "spatial-query-point-parcels",
+      "enabled": false,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "spatial-query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_parcel",
+        "buffer": 100,
+        "geometry": {
+          "type": "Point",
+          "coordinates": [144.29780, -37.82960]
+        }
+      }
+    }
+  ]
+}

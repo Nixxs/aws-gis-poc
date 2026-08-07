@@ -1,0 +1,690 @@
+{
+  "runs": [
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 1,
+      "latency_ms": 250.91,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 2,
+      "latency_ms": 244.64,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 3,
+      "latency_ms": 249.11,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 4,
+      "latency_ms": 244.36,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 5,
+      "latency_ms": 251.66,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 6,
+      "latency_ms": 249.37,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 7,
+      "latency_ms": 275.89,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 8,
+      "latency_ms": 238.52,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 9,
+      "latency_ms": 248.19,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 10,
+      "latency_ms": 273.02,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 1,
+      "latency_ms": 252.99,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 2,
+      "latency_ms": 3517.38,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 3,
+      "latency_ms": 491.95,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 4,
+      "latency_ms": 3189.18,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 5,
+      "latency_ms": 3184.9,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 6,
+      "latency_ms": 3244.2,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 7,
+      "latency_ms": 249.33,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 8,
+      "latency_ms": 239.08,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 9,
+      "latency_ms": 249.69,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 10,
+      "latency_ms": 249.55,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 1,
+      "latency_ms": 264.63,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 2,
+      "latency_ms": 256.03,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 3,
+      "latency_ms": 508.89,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 4,
+      "latency_ms": 263.8,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 5,
+      "latency_ms": 259.58,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 6,
+      "latency_ms": 490.2,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 7,
+      "latency_ms": 501.55,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 8,
+      "latency_ms": 251.9,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 9,
+      "latency_ms": 507.91,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-point-env",
+      "sequence": 10,
+      "latency_ms": 498.25,
+      "status": 200,
+      "response_bytes": 34980,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 1,
+      "latency_ms": 228.62,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 2,
+      "latency_ms": 242.25,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 3,
+      "latency_ms": 247.77,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 4,
+      "latency_ms": 243.62,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 5,
+      "latency_ms": 245.67,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 6,
+      "latency_ms": 246.43,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 7,
+      "latency_ms": 243.82,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 8,
+      "latency_ms": 246.16,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 9,
+      "latency_ms": 251.3,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 10,
+      "latency_ms": 261.53,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 1
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 1,
+      "latency_ms": 265.55,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 2,
+      "latency_ms": 260.97,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 3,
+      "latency_ms": 265.49,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 4,
+      "latency_ms": 266.17,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 5,
+      "latency_ms": 272.21,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 6,
+      "latency_ms": 247.72,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 7,
+      "latency_ms": 255.49,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 8,
+      "latency_ms": 245.51,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 9,
+      "latency_ms": 261.41,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 10,
+      "latency_ms": 248.46,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 5
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 1,
+      "latency_ms": 256.02,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 2,
+      "latency_ms": 254.15,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 3,
+      "latency_ms": 2866.2,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 4,
+      "latency_ms": 249.9,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 5,
+      "latency_ms": 274.91,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 6,
+      "latency_ms": 2752.13,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 7,
+      "latency_ms": 2684.09,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 8,
+      "latency_ms": 300.45,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 9,
+      "latency_ms": 2766.47,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "sequence": 10,
+      "latency_ms": 3098.23,
+      "status": 200,
+      "response_bytes": 33765,
+      "success": true,
+      "error": null,
+      "concurrency": 10
+    }
+  ],
+  "summary": [
+    {
+      "case": "spatial-query-point-env",
+      "concurrency": 1,
+      "requests": 10,
+      "successful_requests": 10,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 3.96,
+      "mean_latency_ms": 252.57,
+      "p50_latency_ms": 249.24,
+      "p95_latency_ms": 274.6,
+      "p99_latency_ms": 275.63,
+      "minimum_latency_ms": 238.52,
+      "maximum_latency_ms": 275.89
+    },
+    {
+      "case": "spatial-query-point-env",
+      "concurrency": 5,
+      "requests": 10,
+      "successful_requests": 10,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 2.84,
+      "mean_latency_ms": 1486.83,
+      "p50_latency_ms": 372.47,
+      "p95_latency_ms": 3394.45,
+      "p99_latency_ms": 3492.79,
+      "minimum_latency_ms": 239.08,
+      "maximum_latency_ms": 3517.38
+    },
+    {
+      "case": "spatial-query-point-env",
+      "concurrency": 10,
+      "requests": 10,
+      "successful_requests": 10,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 19.44,
+      "mean_latency_ms": 380.27,
+      "p50_latency_ms": 377.41,
+      "p95_latency_ms": 508.45,
+      "p99_latency_ms": 508.8,
+      "minimum_latency_ms": 251.9,
+      "maximum_latency_ms": 508.89
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "concurrency": 1,
+      "requests": 10,
+      "successful_requests": 10,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 4.07,
+      "mean_latency_ms": 245.72,
+      "p50_latency_ms": 245.91,
+      "p95_latency_ms": 256.93,
+      "p99_latency_ms": 260.61,
+      "minimum_latency_ms": 228.62,
+      "maximum_latency_ms": 261.53
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "concurrency": 5,
+      "requests": 10,
+      "successful_requests": 10,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 18.85,
+      "mean_latency_ms": 258.9,
+      "p50_latency_ms": 261.19,
+      "p95_latency_ms": 269.49,
+      "p99_latency_ms": 271.67,
+      "minimum_latency_ms": 245.51,
+      "maximum_latency_ms": 272.21
+    },
+    {
+      "case": "spatial-query-polygon-env",
+      "concurrency": 10,
+      "requests": 10,
+      "successful_requests": 10,
+      "error_rate_percent": 0.0,
+      "throughput_requests_per_second": 3.22,
+      "mean_latency_ms": 1550.25,
+      "p50_latency_ms": 1492.27,
+      "p95_latency_ms": 2993.82,
+      "p99_latency_ms": 3077.35,
+      "minimum_latency_ms": 249.9,
+      "maximum_latency_ms": 3098.23
+    }
+  ]
+}

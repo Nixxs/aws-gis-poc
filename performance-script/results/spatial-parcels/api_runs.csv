@@ -1,0 +1,6 @@
+case,sequence,latency_ms,status,response_bytes,success,error,concurrency
+spatial-query-point-parcels,1,4254.13,200,86464,True,,1
+spatial-query-point-parcels,2,4162.8,200,86464,True,,1
+spatial-query-point-parcels,3,4196.6,200,86464,True,,1
+spatial-query-point-parcels,4,4225.16,200,86464,True,,1
+spatial-query-point-parcels,5,4193.74,200,86464,True,,1

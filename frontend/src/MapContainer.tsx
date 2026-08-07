@@ -4,11 +4,12 @@ import { Protocol } from 'pmtiles'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import type { AppConfig, LayerConfig, BasemapConfig } from './config'
 import { useAuth } from './auth'
-import { onLayerToggle, onQueryResult, onClearQuery } from './events'
+import { onLayerToggle, onQueryResult, onQueryResultMulti, onClearQuery } from './events'
 import {
   onSpatialDrawStart, onSpatialDrawFinish, onSpatialDrawClear,
   onSpatialDrawGeometry, emitSpatialDrawComplete,
   emitFeatureSelect, onFeatureClear, onResultFeatureSelect,
+  emitMapZoom,
 } from './events'
 import { createSpatialDraw, type SpatialDraw } from './spatialDraw'
 import { GoToLatLngControl } from './GoToLatLngControl'
@@ -41,6 +42,8 @@ function addVectorLayer(map: maplibregl.Map, layer: LayerConfig, layers: LayerCo
     type: 'fill',
     source: layer.id,
     'source-layer': layer.id, // == tippecanoe -l name == file stem
+    ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
+    ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
     paint: {
       'fill-color': layer.color,
       'fill-opacity': layer.opacity,
@@ -52,6 +55,8 @@ function addVectorLayer(map: maplibregl.Map, layer: LayerConfig, layers: LayerCo
     type: 'line',
     source: layer.id,
     'source-layer': layer.id,
+    ...(layer.minZoom != null ? { minzoom: layer.minZoom } : {}),
+    ...(layer.maxZoom != null ? { maxzoom: layer.maxZoom } : {}),
     paint: {
       'line-color': layer.color,
       'line-width': 1,
@@ -181,6 +186,13 @@ export default function MapContainer({ config }: MapContainerProps) {
       }
     }))
 
+    // Broadcast the current zoom so the sidebar can grey out layers that are
+    // outside their allowed zoom range. Fire once now for the initial value.
+    const publishZoom = () => emitMapZoom({ zoom: map.getZoom() })
+    map.on('zoom', publishZoom)
+    subs.push(() => map.off('zoom', publishZoom))
+    publishZoom()
+
     // Quiet safety net: surface any MapLibre style/tile errors in the console.
     map.on('error', (e) => console.error('[map error]', e.error ?? e))
 
@@ -297,6 +309,20 @@ export default function MapContainer({ config }: MapContainerProps) {
           if (f.geometry) extendBounds(bounds, (f.geometry as any).coordinates)
         }
         if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, maxZoom: 14 })
+      }))
+
+      // Multi-layer results (buffer intersect): draw every layer's features into
+      // the same result source and zoom to the combined extent.
+      subs.push(onQueryResultMulti((e) => {
+        const features = e.results.flatMap((r) => r.geojson.features ?? [])
+        const source = map.getSource('query-result') as maplibregl.GeoJSONSource
+        source.setData({ type: 'FeatureCollection', features } as any)
+        clearResultHighlight()
+        const bounds = new maplibregl.LngLatBounds()
+        for (const f of features) {
+          if (f.geometry) extendBounds(bounds, (f.geometry as any).coordinates)
+        }
+        if (!bounds.isEmpty()) map.fitBounds(bounds, { padding: 40, maxZoom: 16 })
       }))
 
       subs.push(onClearQuery(() => {

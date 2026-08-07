@@ -1,0 +1,2 @@
+case,concurrency,requests,successful_requests,error_rate_percent,throughput_requests_per_second,mean_latency_ms,p50_latency_ms,p95_latency_ms,p99_latency_ms,minimum_latency_ms,maximum_latency_ms
+spatial-query-point-parcels,1,5,5,0.0,0.24,4206.49,4196.6,4248.34,4252.97,4162.8,4254.13

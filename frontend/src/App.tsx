@@ -6,11 +6,13 @@ import MapContainer from './MapContainer'
 import LayerList from './LayerList'
 import QueryPanel from './QueryPanel'
 import SpatialQueryPanel from './SpatialQueryPanel'
+import BufferIntersectPanel from './BufferIntersectPanel'
 import AttributeTable from './AttributeTable'
 import FeatureInfoPanel from './FeatureInfoPanel'
 import LoginControl from './LoginControl'
 import { useConfig } from './config'
 import { useAuth } from './auth'
+import { warmUp } from './api'
 import { useState, useEffect } from 'react'
 
 const DRAWER_WIDTH = 340
@@ -24,6 +26,12 @@ export default function App() {
     useEffect(() => {
         setHasAuth(!!user)
     }, [user])
+
+    // Warm the Lambda container as soon as the app loads so the user's first
+    // query isn't slowed by a container cold start. Best-effort, runs once.
+    useEffect(() => {
+        warmUp()
+    }, [])
 
     return (
         <Box sx={
@@ -94,6 +102,8 @@ export default function App() {
                     <QueryPanel />
                     <Divider sx={{ my: 2 }} />
                     <SpatialQueryPanel />
+                    <Divider sx={{ my: 2 }} />
+                    <BufferIntersectPanel />
                 </Box>
             </Drawer>
 

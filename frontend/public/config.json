@@ -54,7 +54,8 @@
       "visibleByDefault": true,
       "opacity": 0.15,
       "color": "#ef6c00",
-      "requiresAuth": true
+      "requiresAuth": true,
+      "minZoom": 14
     }
   ]
 }
