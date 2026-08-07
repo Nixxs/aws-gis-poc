@@ -4,6 +4,7 @@ import MapContainer from './MapContainer'
 import LayerList from './LayerList'
 import QueryPanel from './QueryPanel'
 import SpatialQueryPanel from './SpatialQueryPanel'
+import AttributeTable from './AttributeTable'
 import LoginControl from './LoginControl'
 import { useConfig } from './config'
 import { useAuth } from './auth'
@@ -65,6 +66,7 @@ export default function App() {
                 <Toolbar variant="dense" />{/* spacer under the AppBar */}
                 <Box sx={{ position: 'absolute', inset: 0, top: 48 }}>
                     {config && <MapContainer config={config} />}
+                    <AttributeTable />
                 </Box>
             </Box>
         </Box>
