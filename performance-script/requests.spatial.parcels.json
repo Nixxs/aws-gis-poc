@@ -1,0 +1,22 @@
+{
+  "_comment": "Heavy-layer (~5GB parcels) spatial-query case, run at concurrency 1 only to characterise single-user worst-case latency without hammering the layer.",
+  "base_url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+  "requests": [
+    {
+      "name": "spatial-query-point-parcels",
+      "enabled": true,
+      "method": "POST",
+      "url": "https://xwcbfdedow5kqa2roja44nzmle0zqfvn.lambda-url.ap-southeast-2.on.aws/",
+      "params": { "action": "spatial-query" },
+      "headers": { "Content-Type": "application/json" },
+      "json_body": {
+        "layer": "au_vic_dtp_parcel",
+        "buffer": 100,
+        "geometry": {
+          "type": "Point",
+          "coordinates": [144.29780, -37.82960]
+        }
+      }
+    }
+  ]
+}

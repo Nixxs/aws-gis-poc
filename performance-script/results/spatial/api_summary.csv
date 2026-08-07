@@ -1,0 +1,7 @@
+case,concurrency,requests,successful_requests,error_rate_percent,throughput_requests_per_second,mean_latency_ms,p50_latency_ms,p95_latency_ms,p99_latency_ms,minimum_latency_ms,maximum_latency_ms
+spatial-query-point-env,1,10,10,0.0,3.96,252.57,249.24,274.6,275.63,238.52,275.89
+spatial-query-point-env,5,10,10,0.0,2.84,1486.83,372.47,3394.45,3492.79,239.08,3517.38
+spatial-query-point-env,10,10,10,0.0,19.44,380.27,377.41,508.45,508.8,251.9,508.89
+spatial-query-polygon-env,1,10,10,0.0,4.07,245.72,245.91,256.93,260.61,228.62,261.53
+spatial-query-polygon-env,5,10,10,0.0,18.85,258.9,261.19,269.49,271.67,245.51,272.21
+spatial-query-polygon-env,10,10,10,0.0,3.22,1550.25,1492.27,2993.82,3077.35,249.9,3098.23
