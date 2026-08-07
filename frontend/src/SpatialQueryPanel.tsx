@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   Box, Typography, TextField, MenuItem,
-  Button, Stack, CircularProgress, Alert,
+  Button, Stack, CircularProgress, Alert, Collapse, IconButton,
 } from '@mui/material'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import { useConfig } from './config'
 import { useAuth } from './auth'
 import { spatialQuery } from './api'
@@ -27,6 +29,7 @@ export default function SpatialQueryPanel() {
   )
 
   const [layer, setLayer] = useState('')
+  const [open, setOpen] = useState(false)
   const [geometry, setGeometry] = useState<DrawGeometry | null>(null)
   const [drawingPolygon, setDrawingPolygon] = useState(false)
   const [running, setRunning] = useState(false)
@@ -98,10 +101,22 @@ export default function SpatialQueryPanel() {
 
   return (
     <Box>
-      <Typography variant="overline" sx={{ color: 'text.secondary' }}>
-        Spatial query
-      </Typography>
+      <Box
+        onClick={() => setOpen((o) => !o)}
+        sx={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          cursor: 'pointer', userSelect: 'none',
+        }}
+      >
+        <Typography variant="overline" sx={{ color: 'text.secondary' }}>
+          Spatial query
+        </Typography>
+        <IconButton size="small" aria-label={open ? 'Collapse spatial query' : 'Expand spatial query'}>
+          {open ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
+        </IconButton>
+      </Box>
 
+      <Collapse in={open}>
       <Stack spacing={1.5} sx={{ mt: 1 }}>
         {/* 1. Layer */}
         <TextField
@@ -168,6 +183,7 @@ export default function SpatialQueryPanel() {
           </Alert>
         )}
       </Stack>
+      </Collapse>
     </Box>
   )
 }
