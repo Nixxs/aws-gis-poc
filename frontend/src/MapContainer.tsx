@@ -5,6 +5,11 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import type { AppConfig, LayerConfig, BasemapConfig } from './config'
 import { useAuth } from './auth'
 import { onLayerToggle, onQueryResult, onClearQuery } from './events'
+import {
+  onSpatialDrawStart, onSpatialDrawFinish, onSpatialDrawClear,
+  onSpatialDrawGeometry, emitSpatialDrawComplete,
+} from './events'
+import { createSpatialDraw, type SpatialDraw } from './spatialDraw'
 import { GoToLatLngControl } from './GoToLatLngControl'
 
 // Register the pmtiles:// protocol ONCE, at module load — not per render.
@@ -180,6 +185,10 @@ export default function MapContainer({ config }: MapContainerProps) {
 
     // Sources/layers can only be added AFTER the base style has loaded.
     map.on('load', () => {
+      // The spatial-draw tool is created after the query-result layers below so
+      // its shapes sit on top; declared here so the popup handler can defer to it.
+      let draw: SpatialDraw | null = null
+
       // Basemaps first so they sit BENEATH the vector data layers.
       for (const bm of config.basemaps ?? []) {
         if (bm.requiresAuth) continue // auth-gated basemaps handled by a separate effect
@@ -194,6 +203,8 @@ export default function MapContainer({ config }: MapContainerProps) {
       // Click a feature -> show its attributes in a popup.
       const fillLayerIds = config.layers.map((l) => `${l.id}-fill`)
       map.on('click', fillLayerIds, (e) => {
+        // While the user is drawing a spatial query, clicks add vertices, not popups.
+        if (draw?.isActive()) return
         const feature = e.features?.[0]
         if (!feature) return
 
@@ -263,6 +274,14 @@ export default function MapContainer({ config }: MapContainerProps) {
         const source = map.getSource('query-result') as maplibregl.GeoJSONSource
         source.setData(EMPTY as any)
       }))
+
+      // Spatial-draw tool: the SpatialQueryPanel drives it over the event bus.
+      // Added last so its point/line/fill sit above the query-result highlight.
+      draw = createSpatialDraw(map, (geometry) => emitSpatialDrawComplete({ geometry }))
+      subs.push(onSpatialDrawStart((e) => draw?.start(e.mode)))
+      subs.push(onSpatialDrawFinish(() => draw?.finish()))
+      subs.push(onSpatialDrawClear(() => draw?.clear()))
+      subs.push(onSpatialDrawGeometry((e) => draw?.showGeometry(e.geometry)))
     })
 
     return () => {

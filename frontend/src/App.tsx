@@ -3,6 +3,7 @@ import MapIcon from '@mui/icons-material/Map'
 import MapContainer from './MapContainer'
 import LayerList from './LayerList'
 import QueryPanel from './QueryPanel'
+import SpatialQueryPanel from './SpatialQueryPanel'
 import LoginControl from './LoginControl'
 import { useConfig } from './config'
 import { useAuth } from './auth'
@@ -54,6 +55,8 @@ export default function App() {
                     <LayerList />
                     <Divider sx={{ my: 2 }} />
                     <QueryPanel />
+                    <Divider sx={{ my: 2 }} />
+                    <SpatialQueryPanel />
                 </Box>
             </Drawer>
 

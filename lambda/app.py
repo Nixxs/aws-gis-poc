@@ -6,6 +6,7 @@ It uses an "action" router so one Lambda can serve every query type:
     action=describe-layer     -> a layer's column schema
     action=unique-values      -> distinct values of one column (for autocomplete)
     action=query              -> rows from a layer with an Esri-style filter
+    action=spatial-query      -> a layer's features that intersect a drawn geometry
 
 The handler reads the API Gateway / Lambda Function URL "v2.0" event shape, so
 this exact function can sit behind a Function URL now and an API Gateway HTTP
@@ -89,9 +90,13 @@ def handler(event, context):
             from queries.query_layer import query_layer
             return _response(200, query_layer(all_params(event), APP_BUCKET, GEOPARQUET_PREFIX))
 
+        if action == "spatial-query":
+            from queries.spatial_query import spatial_query
+            return _response(200, spatial_query(all_params(event), APP_BUCKET, GEOPARQUET_PREFIX))
+
         return _response(400, {
             "error": f"unknown or missing action: {action!r}",
-            "actions": ["list-layers", "describe-layer", "unique-values", "query"],
+            "actions": ["list-layers", "describe-layer", "unique-values", "query", "spatial-query"],
         })
     except ValueError as exc:  # bad/missing parameters -> client error
         return _response(400, {"error": str(exc)})
