@@ -6,7 +6,7 @@
     "image": "{{REPO}}:latest",
     "executionRoleArn": "arn:aws:iam::{{ACCT}}:role/gisPocBatchExecutionRole",
     "jobRoleArn": "arn:aws:iam::{{ACCT}}:role/gisPocBatchJobRole",
-    "networkConfiguration": { "assignPublicIp": "ENABLED" },
+    "networkConfiguration": { "assignPublicIp": "DISABLED" },
     "ephemeralStorage": { "sizeInGiB": 200 },
     "resourceRequirements": [
       { "type": "VCPU", "value": "2" },

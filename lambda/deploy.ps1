@@ -58,10 +58,12 @@ function Test-AWS {
     }
 }
 
+# DTP Landing Zone SCP requires every new role to carry the permissions boundary.
 function Ensure-Role($name, $trustUri) {
     if (-not (Test-AWS iam get-role --role-name $name)) {
         Write-Host "    creating role $name" -ForegroundColor DarkGray
-        Invoke-AWS iam create-role --role-name $name --assume-role-policy-document $trustUri
+        Invoke-AWS iam create-role --role-name $name --assume-role-policy-document $trustUri `
+            --permissions-boundary $cfg.BOUNDARY
     } else {
         Write-Host "    role $name exists" -ForegroundColor DarkGray
         Invoke-AWS iam update-assume-role-policy --role-name $name --policy-document $trustUri
@@ -71,7 +73,7 @@ function Ensure-Role($name, $trustUri) {
 # --- setup -----------------------------------------------------------------
 $cfg = Read-DotEnv $envFile
 foreach ($pair in (Read-DotEnv $lambdaEnv).GetEnumerator()) { $cfg[$pair.Key] = $pair.Value }
-foreach ($k in 'REGION', 'ACCT', 'APP', 'FUNCTION_NAME', 'ROLE_NAME', 'ECR_REPO') {
+foreach ($k in 'REGION', 'ACCT', 'APP', 'FUNCTION_NAME', 'ROLE_NAME', 'ECR_REPO', 'BOUNDARY') {
     if (-not $cfg.ContainsKey($k) -or -not $cfg[$k]) { throw "missing required env key: $k (check root .env + lambda/.env)" }
 }
 $functionName = $cfg.FUNCTION_NAME

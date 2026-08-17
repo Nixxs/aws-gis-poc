@@ -13,7 +13,7 @@ import LoginControl from './LoginControl'
 import { useConfig } from './config'
 import { useAuth } from './auth'
 import { warmUp } from './api'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const DRAWER_WIDTH = 340
 
@@ -27,11 +27,18 @@ export default function App() {
         setHasAuth(!!user)
     }, [user])
 
-    // Warm the Lambda container as soon as the app loads so the user's first
-    // query isn't slowed by a container cold start. Best-effort, runs once.
+    // Warm the Lambda container as soon as the layer config is available, by
+    // running a real DuckDB query (describe-layer) against a layer. Runs once so
+    // the user's first query isn't slowed by a container cold start.
+    const warmedRef = useRef(false)
     useEffect(() => {
-        warmUp()
-    }, [])
+        if (warmedRef.current || !config) return
+        // Prefer a public layer so the warm-up works for anonymous users too.
+        const layer = config.layers.find((l) => !l.requiresAuth) ?? config.layers[0]
+        if (!layer) return
+        warmedRef.current = true
+        warmUp(layer.id)
+    }, [config])
 
     return (
         <Box sx={

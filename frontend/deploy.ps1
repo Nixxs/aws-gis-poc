@@ -75,8 +75,10 @@ $bucketMissing = ($LASTEXITCODE -ne 0)
 $ErrorActionPreference = "Stop"
 if ($bucketMissing) {
     Write-Host "    creating $WEB_BUCKET" -ForegroundColor DarkGray
+    # DTP Landing Zone: lz: tags must be in the CreateBucket request (EnforceLzTags SCP).
+    $bucketCfg = "LocationConstraint=$REGION,Tags=[{Key=lz:CostCenter,Value=$($cfg.TAG_COSTCENTER)},{Key=lz:BackupPlan,Value=$($cfg.TAG_BACKUPPLAN)}]"
     Invoke-AWS s3api create-bucket --bucket $WEB_BUCKET --region $REGION `
-        --create-bucket-configuration "LocationConstraint=$REGION"
+        --create-bucket-configuration $bucketCfg
 }
 Invoke-AWS s3api put-public-access-block --bucket $WEB_BUCKET `
     --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=true,RestrictPublicBuckets=true"
