@@ -229,3 +229,4 @@ __marimo__/
 
 AwsConsoleSignin.ps1
 performance-script/results/*
+.env.*

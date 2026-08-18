@@ -113,3 +113,7 @@ powershell -ExecutionPolicy Bypass -File frontend\deploy.ps1
   it with CloudFront instead.
 
 
+## Migration Plan Notes
+- tooling layer needs to be added to the migration
+- Add risks
+    - ie arcgis > config.json file needs to be maintained as well

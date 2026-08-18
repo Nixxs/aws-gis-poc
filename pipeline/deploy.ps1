@@ -205,22 +205,17 @@ if ($qCount -ne "1") {
 Write-Host "==> 4/6 Registering Batch job definition" -ForegroundColor Cyan
 Invoke-AWS batch register-job-definition --cli-input-json (Render-Template (Join-Path $batchDir "job-definition.json"))
 
-# --- 5. Make the app bucket's public/ prefix publicly readable -------------
+# --- 5. Ensure the data buckets exist (private) ---------------------------
 
-Write-Host "==> 5/6 Configuring public read access on app bucket" -ForegroundColor Cyan
-# Ensure the ingestion + app buckets exist (compliantly tagged) before we
-# configure them. Both are created here if missing rather than by hand.
+Write-Host "==> 5/6 Ensuring data buckets exist (private)" -ForegroundColor Cyan
+# Both buckets stay private. The app bucket is deliberately NOT made public:
+# DTP Landing Zone SCP p-neh3z9jw denies s3:PutBucketPublicAccessBlock. Instead
+# the frontend deploy serves the app bucket's /config.json and /public/* through
+# the shared CloudFront distribution using Origin Access Control (OAC), so no
+# public bucket policy, public-access-block change, or S3 CORS is needed here
+# (the SPA and its data are same-origin under one CloudFront domain).
 Ensure-Bucket $cfg.ING
 Ensure-Bucket $cfg.APP
-# Allow a public bucket policy (keep ACLs blocked - we use a bucket policy, not ACLs).
-Invoke-AWS s3api put-public-access-block --bucket $cfg.APP `
-    --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=false,RestrictPublicBuckets=false"
-# Grant anonymous s3:GetObject on the public/ prefix only.
-Invoke-AWS s3api put-bucket-policy --bucket $cfg.APP `
-    --policy (Render-Template (Join-Path $iamDir "app-bucket-public-policy.json"))
-# CORS so browser map clients can fetch PMTiles via HTTP range requests.
-Invoke-AWS s3api put-bucket-cors --bucket $cfg.APP `
-    --cors-configuration (File-Uri (Join-Path $iamDir "app-bucket-cors.json"))
 
 # --- 6. S3 notifications + EventBridge rule + target ----------------------
 
