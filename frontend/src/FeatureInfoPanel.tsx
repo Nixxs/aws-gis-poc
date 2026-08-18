@@ -53,7 +53,7 @@ export default function FeatureInfoPanel() {
         top: 10,        // distance from the top of the map
         right: 52,      // clears the top-right nav control (~40px) so we sit to its LEFT
         // ------------------------------------------------
-        width: 300,
+        width: 400,
         maxHeight: 'calc(100% - 100px)',
         display: 'flex',
         flexDirection: 'column',

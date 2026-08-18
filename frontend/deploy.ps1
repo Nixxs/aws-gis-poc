@@ -118,6 +118,11 @@ $appOrigin = "$APP_BUCKET.s3.$REGION.amazonaws.com"
 #   public/* , config.json    -> app-data bucket (Option A: same-origin delivery)
 # CachePolicyId 658327ea... is the AWS-managed CachingOptimized policy.
 function Build-DistConfig($ref) {
+    # Origins + behaviors carry the FULL set of fields (CustomHeaders, AllowedMethods,
+    # TrustedSigners, etc.). create-distribution would default these, but
+    # update-distribution requires a complete config (it rejects a partial origin with
+    # "The 'OriginCustomHeaders' field is missing."). Since the update path overwrites
+    # only these three sections onto the fetched config, they must be self-complete.
     return @"
 {
   "CallerReference": "$ref",
@@ -125,26 +130,52 @@ function Build-DistConfig($ref) {
   "Enabled": true,
   "DefaultRootObject": "index.html",
   "Origins": { "Quantity": 2, "Items": [
-    { "Id": "s3-$WEB_BUCKET", "DomainName": "$webOrigin",
+    { "Id": "s3-$WEB_BUCKET", "DomainName": "$webOrigin", "OriginPath": "",
+      "CustomHeaders": { "Quantity": 0 },
       "OriginAccessControlId": "$oacId",
-      "S3OriginConfig": { "OriginAccessIdentity": "" } },
-    { "Id": "s3-$APP_BUCKET", "DomainName": "$appOrigin",
+      "S3OriginConfig": { "OriginAccessIdentity": "" },
+      "ConnectionAttempts": 3, "ConnectionTimeout": 10,
+      "OriginShield": { "Enabled": false } },
+    { "Id": "s3-$APP_BUCKET", "DomainName": "$appOrigin", "OriginPath": "",
+      "CustomHeaders": { "Quantity": 0 },
       "OriginAccessControlId": "$oacId",
-      "S3OriginConfig": { "OriginAccessIdentity": "" } } ] },
+      "S3OriginConfig": { "OriginAccessIdentity": "" },
+      "ConnectionAttempts": 3, "ConnectionTimeout": 10,
+      "OriginShield": { "Enabled": false } } ] },
   "DefaultCacheBehavior": {
     "TargetOriginId": "s3-$WEB_BUCKET",
     "ViewerProtocolPolicy": "redirect-to-https",
     "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
-    "Compress": true },
+    "Compress": true,
+    "SmoothStreaming": false,
+    "FieldLevelEncryptionId": "",
+    "TrustedSigners": { "Enabled": false, "Quantity": 0 },
+    "TrustedKeyGroups": { "Enabled": false, "Quantity": 0 },
+    "AllowedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"],
+      "CachedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] } },
+    "LambdaFunctionAssociations": { "Quantity": 0 },
+    "FunctionAssociations": { "Quantity": 0 } },
   "CacheBehaviors": { "Quantity": 2, "Items": [
     { "PathPattern": "public/*", "TargetOriginId": "s3-$APP_BUCKET",
       "ViewerProtocolPolicy": "redirect-to-https",
       "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
-      "Compress": true },
+      "Compress": true, "SmoothStreaming": false, "FieldLevelEncryptionId": "",
+      "TrustedSigners": { "Enabled": false, "Quantity": 0 },
+      "TrustedKeyGroups": { "Enabled": false, "Quantity": 0 },
+      "AllowedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"],
+        "CachedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] } },
+      "LambdaFunctionAssociations": { "Quantity": 0 },
+      "FunctionAssociations": { "Quantity": 0 } },
     { "PathPattern": "config.json", "TargetOriginId": "s3-$APP_BUCKET",
       "ViewerProtocolPolicy": "redirect-to-https",
       "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
-      "Compress": true } ] },
+      "Compress": true, "SmoothStreaming": false, "FieldLevelEncryptionId": "",
+      "TrustedSigners": { "Enabled": false, "Quantity": 0 },
+      "TrustedKeyGroups": { "Enabled": false, "Quantity": 0 },
+      "AllowedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"],
+        "CachedMethods": { "Quantity": 2, "Items": ["GET", "HEAD"] } },
+      "LambdaFunctionAssociations": { "Quantity": 0 },
+      "FunctionAssociations": { "Quantity": 0 } } ] },
   "CustomErrorResponses": { "Quantity": 2, "Items": [
     { "ErrorCode": 403, "ResponseCode": "200", "ResponsePagePath": "/index.html", "ErrorCachingMinTTL": 10 },
     { "ErrorCode": 404, "ResponseCode": "200", "ResponsePagePath": "/index.html", "ErrorCachingMinTTL": 10 } ] },
