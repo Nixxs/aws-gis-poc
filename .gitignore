@@ -226,3 +226,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+AwsConsoleSignin.ps1
+performance-script/results/*
+.env.*

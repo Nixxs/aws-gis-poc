@@ -100,15 +100,21 @@ export function spatialQuery(layer: string, geometry: unknown, bufferMeters = 0)
   })
 }
 
-// Fire-and-forget "ping" to spin up the Lambda container (and load the DuckDB
-// extensions) while the page is still loading, so the user's first real query
-// doesn't eat the container cold start. Uses the cheapest action (list-layers),
-// never throws, and never blocks the UI. Note: this warms the container only —
-// it does not pre-cache the large parcels GeoParquet, so the first parcels
-// spatial query is still heavier than subsequent ones.
-export function warmUp(): void {
+// Fire-and-forget warm-up fired as the page loads, so the user's first real
+// query doesn't eat the container cold start. Unlike a plain "ping", this runs
+// an actual DuckDB query (describe-layer -> SELECT count(*) over the layer's
+// parquet footer), which spins up the Lambda container AND exercises the
+// DuckDB/httpfs path. A unique `id` (Date.now()) is attached to defeat any
+// HTTP/CDN caching so the query always executes server-side. Best-effort: never
+// throws, never blocks the UI. Note: this warms the container only — it does not
+// pre-cache the large parcels GeoParquet, so the first parcels spatial query is
+// still heavier than subsequent ones.
+export function warmUp(layer: string): void {
+  if (!layer) return
   const url = new URL(API_BASE)
-  url.searchParams.set('action', 'list-layers')
+  url.searchParams.set('action', 'describe-layer')
+  url.searchParams.set('layer', layer)
+  url.searchParams.set('id', String(Date.now())) // cache-buster — force a fresh run
   // keepalive lets the request survive if the user navigates quickly.
   fetch(url.toString(), { keepalive: true }).catch(() => {
     /* ignore — warm-up is best-effort */

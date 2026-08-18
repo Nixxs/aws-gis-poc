@@ -1,6 +1,11 @@
 # API load test (api_performance.py)
 httpx>=0.27
 
+# Local DuckDB spatial benchmark (local_spatial_benchmark.py)
+# pytz is needed by DuckDB to materialise timezone-aware timestamp columns.
+duckdb>=1.5
+pytz>=2024.1
+
 # Browser / map metrics (frontend_performance.py)
 # After installing, download the browser once:
 #   .venv\Scripts\playwright.exe install chromium

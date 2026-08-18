@@ -58,20 +58,24 @@ function Test-AWS {
     }
 }
 
+# DTP Landing Zone SCP requires every new role to carry the permissions boundary.
+# NOTE: we do NOT update the trust policy on an existing role - SCP p-yqntz4t2
+# explicitly denies iam:UpdateAssumeRolePolicy. The role is created with the
+# correct trust document up front, so refreshing it is unnecessary anyway.
 function Ensure-Role($name, $trustUri) {
     if (-not (Test-AWS iam get-role --role-name $name)) {
         Write-Host "    creating role $name" -ForegroundColor DarkGray
-        Invoke-AWS iam create-role --role-name $name --assume-role-policy-document $trustUri
+        Invoke-AWS iam create-role --role-name $name --assume-role-policy-document $trustUri `
+            --permissions-boundary $cfg.BOUNDARY
     } else {
-        Write-Host "    role $name exists" -ForegroundColor DarkGray
-        Invoke-AWS iam update-assume-role-policy --role-name $name --policy-document $trustUri
+        Write-Host "    role $name exists (leaving trust policy unchanged)" -ForegroundColor DarkGray
     }
 }
 
 # --- setup -----------------------------------------------------------------
 $cfg = Read-DotEnv $envFile
 foreach ($pair in (Read-DotEnv $lambdaEnv).GetEnumerator()) { $cfg[$pair.Key] = $pair.Value }
-foreach ($k in 'REGION', 'ACCT', 'APP', 'FUNCTION_NAME', 'ROLE_NAME', 'ECR_REPO') {
+foreach ($k in 'REGION', 'ACCT', 'APP', 'FUNCTION_NAME', 'ROLE_NAME', 'ECR_REPO', 'BOUNDARY') {
     if (-not $cfg.ContainsKey($k) -or -not $cfg[$k]) { throw "missing required env key: $k (check root .env + lambda/.env)" }
 }
 $functionName = $cfg.FUNCTION_NAME
@@ -119,16 +123,25 @@ if (-not (Test-AWS lambda get-function --function-name $functionName --region $c
     # A freshly created role can take a few seconds before Lambda can assume it.
     # Only that specific error is worth retrying; surface anything else at once.
     $created = $false
-    for ($i = 0; $i -lt 12; $i++) {
-        $out = & aws lambda create-function --function-name $functionName --region $cfg.REGION `
-            --package-type Image --code "ImageUri=$imageUri" --role $roleArn `
-            --architectures x86_64 --timeout 60 --memory-size 3008 --ephemeral-storage Size=2048 --environment $envVars 2>&1
-        if ($LASTEXITCODE -eq 0) { $created = $true; break }
-        if ($out -notmatch "cannot be assumed|InvalidParameterValueException.*role") {
-            throw "create-function failed: $out"
+    # A native command writing to stderr becomes a TERMINATING error under
+    # $ErrorActionPreference='Stop' even with 2>&1, which would abort before the
+    # retry check below. Drop to Continue so we can inspect $out ourselves.
+    $old = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        for ($i = 0; $i -lt 12; $i++) {
+            $out = & aws lambda create-function --function-name $functionName --region $cfg.REGION `
+                --package-type Image --code "ImageUri=$imageUri" --role $roleArn `
+                --architectures x86_64 --timeout 60 --memory-size 3008 --ephemeral-storage Size=2048 --environment $envVars 2>&1
+            if ($LASTEXITCODE -eq 0) { $created = $true; break }
+            if ($out -notmatch "cannot be assumed|InvalidParameterValueException.*role") {
+                throw "create-function failed: $out"
+            }
+            Write-Host "    waiting for IAM role to become assumable..." -ForegroundColor DarkGray
+            Start-Sleep -Seconds 5
         }
-        Write-Host "    waiting for IAM role to become assumable..." -ForegroundColor DarkGray
-        Start-Sleep -Seconds 5
+    } finally {
+        $ErrorActionPreference = $old
     }
     if (-not $created) { throw "create-function failed (IAM role propagation?)" }
 } else {

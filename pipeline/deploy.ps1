@@ -74,15 +74,46 @@ function Invoke-AWS {
     if ($LASTEXITCODE -ne 0) { throw "aws $($args -join ' ') failed (exit $LASTEXITCODE)" }
 }
 
-# Create an IAM role if it does not exist; otherwise refresh its trust policy.
+# Run an existence check quietly and return $true if it succeeded (exit 0).
+# Needed because $ErrorActionPreference='Stop' turns the AWS CLI's stderr on an
+# expected 'not found' into a terminating error; SilentlyContinue avoids that.
+function Test-AWSExists {
+    $old = $ErrorActionPreference
+    $ErrorActionPreference = 'SilentlyContinue'
+    try {
+        & aws @args 2>$null | Out-Null
+        return ($LASTEXITCODE -eq 0)
+    } finally {
+        $ErrorActionPreference = $old
+    }
+}
+
+# Create an IAM role if it does not exist.
+# DTP Landing Zone SCP requires every new role to carry the permissions boundary.
+# NOTE: the trust policy is only set at creation time. We deliberately do NOT
+# call update-assume-role-policy on an existing role because SCP p-yqntz4t2
+# explicitly denies iam:UpdateAssumeRolePolicy. Roles are created with the
+# correct trust document, so refreshing it is unnecessary anyway.
 function Ensure-Role($roleName, $trustUri) {
-    aws iam get-role --role-name $roleName *> $null
-    if ($LASTEXITCODE -ne 0) {
+    if (-not (Test-AWSExists iam get-role --role-name $roleName)) {
         Write-Host "    creating role $roleName" -ForegroundColor DarkGray
-        Invoke-AWS iam create-role --role-name $roleName --assume-role-policy-document $trustUri
+        Invoke-AWS iam create-role --role-name $roleName --assume-role-policy-document $trustUri `
+            --permissions-boundary $cfg.BOUNDARY
     } else {
-        Write-Host "    role $roleName exists" -ForegroundColor DarkGray
-        Invoke-AWS iam update-assume-role-policy --role-name $roleName --policy-document $trustUri
+        Write-Host "    role $roleName exists (leaving trust policy unchanged)" -ForegroundColor DarkGray
+    }
+}
+
+# Create an S3 bucket if it does not exist. DTP Landing Zone: the lz: tags must
+# be part of the CreateBucket request itself (EnforceLzTags SCP), so they are
+# passed inline via CreateBucketConfiguration.Tags.
+function Ensure-Bucket($bucket) {
+    if (-not (Test-AWSExists s3api head-bucket --bucket $bucket)) {
+        Write-Host "    creating bucket $bucket" -ForegroundColor DarkGray
+        $bcfg = "LocationConstraint=$($cfg.REGION),Tags=[{Key=lz:CostCenter,Value=$($cfg.TAG_COSTCENTER)},{Key=lz:BackupPlan,Value=$($cfg.TAG_BACKUPPLAN)}]"
+        Invoke-AWS s3api create-bucket --bucket $bucket --region $cfg.REGION --create-bucket-configuration $bcfg
+    } else {
+        Write-Host "    bucket $bucket exists" -ForegroundColor DarkGray
     }
 }
 
@@ -90,7 +121,7 @@ function Ensure-Role($roleName, $trustUri) {
 
 $cfg = Read-DotEnv $envFile
 foreach ($pair in (Read-DotEnv $pipelineEnv).GetEnumerator()) { $cfg[$pair.Key] = $pair.Value }
-foreach ($key in 'REGION', 'ACCT', 'ING', 'APP', 'REPO') {
+foreach ($key in 'REGION', 'ACCT', 'ING', 'APP', 'REPO', 'BOUNDARY', 'TAG_COSTCENTER', 'TAG_BACKUPPLAN') {
     if (-not $cfg.ContainsKey($key)) { throw "missing required env key: $key (check root .env + pipeline/.env)" }
 }
 New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
@@ -100,6 +131,12 @@ Write-Host "Deploying with ACCT=$($cfg.ACCT) REGION=$($cfg.REGION)" -ForegroundC
 
 Write-Host "==> 1/6 Building and pushing Docker image" -ForegroundColor Cyan
 $registry = "$($cfg.ACCT).dkr.ecr.$($cfg.REGION).amazonaws.com"
+# Ensure the ECR repository exists (self-service; it is not created elsewhere).
+$repoName = ($cfg.REPO -split '/')[-1]
+if (-not (Test-AWSExists ecr describe-repositories --repository-names $repoName --region $cfg.REGION)) {
+    Write-Host "    creating ECR repo $repoName" -ForegroundColor DarkGray
+    Invoke-AWS ecr create-repository --repository-name $repoName --region $cfg.REGION | Out-Null
+}
 aws ecr get-login-password --region $cfg.REGION | docker login --username AWS --password-stdin $registry
 if ($LASTEXITCODE -ne 0) { throw "ECR docker login failed" }
 docker build -t gis-poc-pipeline $pipelineDir
@@ -168,18 +205,17 @@ if ($qCount -ne "1") {
 Write-Host "==> 4/6 Registering Batch job definition" -ForegroundColor Cyan
 Invoke-AWS batch register-job-definition --cli-input-json (Render-Template (Join-Path $batchDir "job-definition.json"))
 
-# --- 5. Make the app bucket's public/ prefix publicly readable -------------
+# --- 5. Ensure the data buckets exist (private) ---------------------------
 
-Write-Host "==> 5/6 Configuring public read access on app bucket" -ForegroundColor Cyan
-# Allow a public bucket policy (keep ACLs blocked - we use a bucket policy, not ACLs).
-Invoke-AWS s3api put-public-access-block --bucket $cfg.APP `
-    --public-access-block-configuration "BlockPublicAcls=true,IgnorePublicAcls=true,BlockPublicPolicy=false,RestrictPublicBuckets=false"
-# Grant anonymous s3:GetObject on the public/ prefix only.
-Invoke-AWS s3api put-bucket-policy --bucket $cfg.APP `
-    --policy (Render-Template (Join-Path $iamDir "app-bucket-public-policy.json"))
-# CORS so browser map clients can fetch PMTiles via HTTP range requests.
-Invoke-AWS s3api put-bucket-cors --bucket $cfg.APP `
-    --cors-configuration (File-Uri (Join-Path $iamDir "app-bucket-cors.json"))
+Write-Host "==> 5/6 Ensuring data buckets exist (private)" -ForegroundColor Cyan
+# Both buckets stay private. The app bucket is deliberately NOT made public:
+# DTP Landing Zone SCP p-neh3z9jw denies s3:PutBucketPublicAccessBlock. Instead
+# the frontend deploy serves the app bucket's /config.json and /public/* through
+# the shared CloudFront distribution using Origin Access Control (OAC), so no
+# public bucket policy, public-access-block change, or S3 CORS is needed here
+# (the SPA and its data are same-origin under one CloudFront domain).
+Ensure-Bucket $cfg.ING
+Ensure-Bucket $cfg.APP
 
 # --- 6. S3 notifications + EventBridge rule + target ----------------------
 
