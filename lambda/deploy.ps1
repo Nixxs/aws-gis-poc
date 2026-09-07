@@ -1,31 +1,26 @@
 # Deploys the gis-poc-query Lambda (container image) + a public Function URL.
-# Idempotent: safe to re-run. REGION + ACCT come from ../.env; APP from lambda/.env.
+# Idempotent: reads root/component .env (or .env.self with -Environment self).
+# -Profile selects credentials; -CheckOnly verifies config/account without deployment.
 #
 #   powershell -ExecutionPolicy Bypass -File lambda\deploy.ps1
 #
 # Requires Docker running + AWS CLI authenticated.
+
+param(
+    [ValidateSet('current', 'self', 'dtp')][string]$Environment = 'current',
+    [string]$Profile = $env:AWS_PROFILE,
+    [switch]$CheckOnly
+)
 
 $ErrorActionPreference = "Stop"
 
 # --- paths -----------------------------------------------------------------
 $lambdaDir = $PSScriptRoot
 $repoRoot  = Split-Path -Parent $lambdaDir
-$envFile   = Join-Path $repoRoot ".env"
-$lambdaEnv = Join-Path $lambdaDir ".env"
 $iamDir    = Join-Path $lambdaDir "iam"
 $tmpDir    = Join-Path $lambdaDir ".deploy-tmp"
 
 # --- helpers ---------------------------------------------------------------
-function Read-DotEnv($path) {
-    if (-not (Test-Path $path)) { throw ".env not found at $path" }
-    $c = @{}
-    foreach ($line in Get-Content $path) {
-        if ($line -match '^\s*#') { continue }
-        if ($line -match '^\s*([^=\s]+)\s*=\s*(.*)\s*$') { $c[$Matches[1]] = $Matches[2].Trim() }
-    }
-    return $c
-}
-
 function File-Uri($path) { return "file://" + ($path -replace '\\', '/') }
 
 function Render-Template($templatePath) {
@@ -65,18 +60,23 @@ function Test-AWS {
 function Ensure-Role($name, $trustUri) {
     if (-not (Test-AWS iam get-role --role-name $name)) {
         Write-Host "    creating role $name" -ForegroundColor DarkGray
-        Invoke-AWS iam create-role --role-name $name --assume-role-policy-document $trustUri `
-            --permissions-boundary $cfg.BOUNDARY
+        $boundaryArgs = @(Get-RoleBoundaryArguments $cfg)
+        Invoke-AWS iam create-role --role-name $name --assume-role-policy-document $trustUri @boundaryArgs
     } else {
         Write-Host "    role $name exists (leaving trust policy unchanged)" -ForegroundColor DarkGray
     }
 }
 
 # --- setup -----------------------------------------------------------------
-$cfg = Read-DotEnv $envFile
-foreach ($pair in (Read-DotEnv $lambdaEnv).GetEnumerator()) { $cfg[$pair.Key] = $pair.Value }
-foreach ($k in 'REGION', 'ACCT', 'APP', 'FUNCTION_NAME', 'ROLE_NAME', 'ECR_REPO', 'BOUNDARY') {
+. (Join-Path $repoRoot 'deploy-common.ps1')
+$cfg = Get-DeploymentConfig $repoRoot $lambdaDir $Environment
+foreach ($k in 'REGION', 'ACCT', 'APP', 'FUNCTION_NAME', 'ROLE_NAME', 'ECR_REPO') {
     if (-not $cfg.ContainsKey($k) -or -not $cfg[$k]) { throw "missing required env key: $k (check root .env + lambda/.env)" }
+}
+Initialize-Deployment $cfg $Profile
+if ($CheckOnly) {
+    Write-Host "Lambda configuration OK: FUNCTION_NAME=$($cfg.FUNCTION_NAME) APP=$($cfg.APP). No changes made."
+    return
 }
 $functionName = $cfg.FUNCTION_NAME
 $roleName     = $cfg.ROLE_NAME
@@ -103,6 +103,7 @@ if ($LASTEXITCODE -ne 0) { throw "ECR docker login failed" }
 docker build --platform linux/amd64 --provenance=false -t $ecrRepoName $lambdaDir
 if ($LASTEXITCODE -ne 0) { throw "docker build failed" }
 docker tag "$($ecrRepoName):latest" $imageUri
+if ($LASTEXITCODE -ne 0) { throw "docker tag failed" }
 docker push $imageUri
 if ($LASTEXITCODE -ne 0) { throw "docker push failed" }
 

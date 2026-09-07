@@ -3,7 +3,10 @@
     Deploy the built frontend as a secure static app: private S3 + CloudFront (OAC) + HTTPS.
 
 .DESCRIPTION
-    Reads ../.env for ACCT and REGION. Idempotent - safe to run repeatedly:
+    Reads root/component .env, or .env.self with -Environment self. -Profile
+    selects credentials; -CheckOnly validates account/config without a build.
+    The selected VITE_* values override Vite's default .env loading for the build.
+    Idempotent - safe to run repeatedly:
       1. npm run build -> dist/
       2. Ensures a PRIVATE S3 bucket (Block Public Access ON) for the build.
       3. Ensures a CloudFront Origin Access Control (OAC).
@@ -19,52 +22,48 @@
     Run: powershell -File frontend\deploy-frontend.ps1
 #>
 
+param(
+  [ValidateSet('current', 'self', 'dtp')][string]$Environment = 'current',
+  [string]$Profile = $env:AWS_PROFILE,
+  [switch]$CheckOnly
+)
+
 $ErrorActionPreference = "Stop"
 
 $frontendDir = $PSScriptRoot
 $repoRoot    = Split-Path -Parent $frontendDir
-$envFile     = Join-Path $repoRoot ".env"           # pipeline config (ACCT, REGION, ...)
-$webEnvFile  = Join-Path $frontendDir ".env"        # frontend config (VITE_*, WEB_*)
 
 # --- helpers ---------------------------------------------------------------
 
-function Read-DotEnv($path) {
-    if (-not (Test-Path $path)) { throw ".env not found at $path" }
-    $cfg = @{}
-    foreach ($line in Get-Content $path) {
-        if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$') { $cfg[$Matches[1]] = $Matches[2] }
-    }
-    foreach ($key in 'REGION', 'ACCT') {
-        if (-not $cfg.ContainsKey($key)) { throw ".env is missing required key: $key" }
-    }
-    return $cfg
-}
-
 function Invoke-AWS { & aws @args; if ($LASTEXITCODE -ne 0) { throw "aws $($args -join ' ') failed (exit $LASTEXITCODE)" } }
 
-$cfg    = Read-DotEnv $envFile
+. (Join-Path $repoRoot 'deploy-common.ps1')
+$cfg    = Get-DeploymentConfig $repoRoot $frontendDir $Environment
+Initialize-Deployment $cfg $Profile
 $ACCT   = $cfg.ACCT
 $REGION = $cfg.REGION
 
 # WEB_* live in frontend/.env; fall back to defaults if absent.
-$web = @{}
-if (Test-Path $webEnvFile) {
-    foreach ($line in Get-Content $webEnvFile) {
-        if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$') { $web[$Matches[1]] = $Matches[2] }
-    }
-}
+$web = $cfg
 $WEB_BUCKET = if ($web.WEB_BUCKET)   { $web.WEB_BUCKET }   else { "gis-poc-web-intelligis" }
 $APP_BUCKET = if ($web.APP_BUCKET)   { $web.APP_BUCKET }   else { "gis-poc-app-intelligis" }
 $COMMENT    = if ($web.WEB_COMMENT)  { $web.WEB_COMMENT }  else { "gis-poc-web" }   # used to find the distribution again
 $OAC_NAME   = if ($web.WEB_OAC_NAME) { $web.WEB_OAC_NAME } else { "gis-poc-web-oac" }
+
+foreach ($key in 'WEB_BUCKET', 'APP_BUCKET', 'VITE_QUERY_API_URL', 'VITE_PMTILES_BASE_URL', 'VITE_CONFIG_URL') {
+  if (-not $cfg[$key]) { throw "Selected frontend configuration requires $key." }
+}
+if ($CheckOnly) {
+  Write-Host "Frontend configuration OK: WEB_BUCKET=$WEB_BUCKET APP_BUCKET=$APP_BUCKET API=$($cfg.VITE_QUERY_API_URL). No changes made."
+  return
+}
 
 Write-Host "Deploying web app  ACCT=$ACCT REGION=$REGION bucket=$WEB_BUCKET" -ForegroundColor Green
 
 # --- 1. Build --------------------------------------------------------------
 
 Write-Host "==> 1/6 Building frontend (npm run build)" -ForegroundColor Cyan
-npm --prefix $frontendDir run build
-if ($LASTEXITCODE -ne 0) { throw "npm build failed" }
+Invoke-FrontendBuild $cfg $frontendDir
 $dist = Join-Path $frontendDir "dist"
 if (-not (Test-Path $dist)) { throw "dist/ not found after build" }
 
@@ -78,9 +77,8 @@ $ErrorActionPreference = "Stop"
 if ($bucketMissing) {
     Write-Host "    creating $WEB_BUCKET" -ForegroundColor DarkGray
     # DTP Landing Zone: lz: tags must be in the CreateBucket request (EnforceLzTags SCP).
-    $bucketCfg = "LocationConstraint=$REGION,Tags=[{Key=lz:CostCenter,Value=$($cfg.TAG_COSTCENTER)},{Key=lz:BackupPlan,Value=$($cfg.TAG_BACKUPPLAN)}]"
-    Invoke-AWS s3api create-bucket --bucket $WEB_BUCKET --region $REGION `
-        --create-bucket-configuration $bucketCfg
+    $bucketArgs = @(Get-BucketCreateArguments $cfg)
+    Invoke-AWS s3api create-bucket --bucket $WEB_BUCKET --region $REGION @bucketArgs
 }
 # DTP Landing Zone denies s3:PutBucketPublicAccessBlock (SCP p-neh3z9jw); the account
 # already enforces Block Public Access, and we never make this bucket public. Best-effort:
@@ -196,8 +194,11 @@ if (-not $distId -or $distId -eq "None") {
     # needs the FULL config + current ETag, so we fetch it and overwrite only the
     # routing sections, keeping the existing CallerReference (must not change).
     Write-Host "    updating existing distribution routing" -ForegroundColor DarkGray
-    $etag    = aws cloudfront get-distribution-config --id $distId --query "ETag" --output text
-    $current = aws cloudfront get-distribution-config --id $distId --query "DistributionConfig" | ConvertFrom-Json
+    $response = aws cloudfront get-distribution-config --id $distId --output json
+    if ($LASTEXITCODE -ne 0) { throw 'Unable to read CloudFront distribution configuration.' }
+    $record = ($response -join "`n") | ConvertFrom-Json
+    $etag = $record.ETag
+    $current = $record.DistributionConfig
     $tpl     = (Build-DistConfig $current.CallerReference) | ConvertFrom-Json
     $current.Origins              = $tpl.Origins
     $current.DefaultCacheBehavior = $tpl.DefaultCacheBehavior

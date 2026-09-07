@@ -3,9 +3,11 @@
     One-command deploy for the GIS POC data pipeline.
 
 .DESCRIPTION
-    Reads configuration from ../.env (REGION, ACCT shared with the frontend)
-    plus pipeline/.env (pipeline-only: ING, APP, REPO, VPC, SUBNET, SG) and
-    brings AWS to the desired state. Safe to run repeatedly - it does NOT create duplicate
+    Reads ../.env plus pipeline/.env, or both .env.self files with -Environment self.
+    -Profile explicitly selects AWS credentials; the account is verified before
+    any build or cloud mutation. -CheckOnly validates config/identity and exits.
+    Pipeline settings include ING, APP, REPO, VPC, SUBNET, SG, ASSIGN_PUBLIC_IP.
+    Brings AWS to the desired state. Safe to run repeatedly - it does NOT create duplicate
     resources:
 
       1. Builds the Docker image and pushes it to ECR.
@@ -25,29 +27,23 @@
     Run from anywhere: powershell -File pipeline\deploy.ps1
 #>
 
+param(
+    [ValidateSet('current', 'self', 'dtp')][string]$Environment = 'current',
+    [string]$Profile = $env:AWS_PROFILE,
+    [switch]$CheckOnly
+)
+
 $ErrorActionPreference = "Stop"
 
 $pipelineDir = $PSScriptRoot
 $repoRoot    = Split-Path -Parent $pipelineDir
-$envFile     = Join-Path $repoRoot ".env"
-$pipelineEnv = Join-Path $pipelineDir ".env"
 $iamDir      = Join-Path $pipelineDir "iam"
 $batchDir    = Join-Path $pipelineDir "batch"
 $ebDir       = Join-Path $pipelineDir "eventbridge"
 $tmpDir      = Join-Path $pipelineDir ".deploy-tmp"
+. (Join-Path $repoRoot 'deploy-common.ps1')
 
 # --- helpers ---------------------------------------------------------------
-
-function Read-DotEnv($path) {
-    if (-not (Test-Path $path)) { throw ".env not found at $path" }
-    $cfg = @{}
-    foreach ($line in Get-Content $path) {
-        if ($line -match '^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$') {
-            $cfg[$Matches[1]] = $Matches[2]
-        }
-    }
-    return $cfg
-}
 
 # Render a {{TOKEN}} template with the .env values; returns a file:// path.
 function Render-Template($templatePath) {
@@ -97,8 +93,8 @@ function Test-AWSExists {
 function Ensure-Role($roleName, $trustUri) {
     if (-not (Test-AWSExists iam get-role --role-name $roleName)) {
         Write-Host "    creating role $roleName" -ForegroundColor DarkGray
-        Invoke-AWS iam create-role --role-name $roleName --assume-role-policy-document $trustUri `
-            --permissions-boundary $cfg.BOUNDARY
+        $boundaryArgs = @(Get-RoleBoundaryArguments $cfg)
+        Invoke-AWS iam create-role --role-name $roleName --assume-role-policy-document $trustUri @boundaryArgs
     } else {
         Write-Host "    role $roleName exists (leaving trust policy unchanged)" -ForegroundColor DarkGray
     }
@@ -110,8 +106,8 @@ function Ensure-Role($roleName, $trustUri) {
 function Ensure-Bucket($bucket) {
     if (-not (Test-AWSExists s3api head-bucket --bucket $bucket)) {
         Write-Host "    creating bucket $bucket" -ForegroundColor DarkGray
-        $bcfg = "LocationConstraint=$($cfg.REGION),Tags=[{Key=lz:CostCenter,Value=$($cfg.TAG_COSTCENTER)},{Key=lz:BackupPlan,Value=$($cfg.TAG_BACKUPPLAN)}]"
-        Invoke-AWS s3api create-bucket --bucket $bucket --region $cfg.REGION --create-bucket-configuration $bcfg
+        $bucketArgs = @(Get-BucketCreateArguments $cfg)
+        Invoke-AWS s3api create-bucket --bucket $bucket --region $cfg.REGION @bucketArgs
     } else {
         Write-Host "    bucket $bucket exists" -ForegroundColor DarkGray
     }
@@ -119,10 +115,15 @@ function Ensure-Bucket($bucket) {
 
 # --- setup -----------------------------------------------------------------
 
-$cfg = Read-DotEnv $envFile
-foreach ($pair in (Read-DotEnv $pipelineEnv).GetEnumerator()) { $cfg[$pair.Key] = $pair.Value }
-foreach ($key in 'REGION', 'ACCT', 'ING', 'APP', 'REPO', 'BOUNDARY', 'TAG_COSTCENTER', 'TAG_BACKUPPLAN') {
+$cfg = Get-DeploymentConfig $repoRoot $pipelineDir $Environment
+foreach ($key in 'REGION', 'ACCT', 'ING', 'APP', 'REPO') {
     if (-not $cfg.ContainsKey($key)) { throw "missing required env key: $key (check root .env + pipeline/.env)" }
+}
+Set-BatchPublicIpDefault $cfg
+Initialize-Deployment $cfg $Profile
+if ($CheckOnly) {
+    Write-Host "Pipeline configuration OK: ING=$($cfg.ING) APP=$($cfg.APP) ASSIGN_PUBLIC_IP=$($cfg.ASSIGN_PUBLIC_IP). No changes made."
+    return
 }
 New-Item -ItemType Directory -Force -Path $tmpDir | Out-Null
 Write-Host "Deploying with ACCT=$($cfg.ACCT) REGION=$($cfg.REGION)" -ForegroundColor Green
@@ -142,6 +143,7 @@ if ($LASTEXITCODE -ne 0) { throw "ECR docker login failed" }
 docker build -t gis-poc-pipeline $pipelineDir
 if ($LASTEXITCODE -ne 0) { throw "docker build failed" }
 docker tag gis-poc-pipeline:latest "$($cfg.REPO):latest"
+if ($LASTEXITCODE -ne 0) { throw "docker tag failed" }
 docker push "$($cfg.REPO):latest"
 if ($LASTEXITCODE -ne 0) { throw "docker push failed" }
 
@@ -171,6 +173,7 @@ Invoke-AWS iam put-role-policy --role-name gisPocEventBridgeRole `
 Write-Host "==> 3/6 Ensuring Batch compute environment and job queue" -ForegroundColor Cyan
 $ceCount = aws batch describe-compute-environments --compute-environments gis-poc-ce `
     --query "length(computeEnvironments)" --output text 2>$null
+if ($LASTEXITCODE -ne 0) { throw 'Unable to inspect Batch compute environment.' }
 if ($ceCount -ne "1") {
     foreach ($key in 'SUBNET', 'SG') {
         if (-not $cfg.ContainsKey($key)) { throw "Creating compute env needs '$key' in .env" }
@@ -192,6 +195,7 @@ if ($ceCount -ne "1") {
 
 $qCount = aws batch describe-job-queues --job-queues gis-poc-queue `
     --query "length(jobQueues)" --output text 2>$null
+if ($LASTEXITCODE -ne 0) { throw 'Unable to inspect Batch job queue.' }
 if ($qCount -ne "1") {
     Write-Host "    creating job queue gis-poc-queue" -ForegroundColor DarkGray
     Invoke-AWS batch create-job-queue --job-queue-name gis-poc-queue --priority 1 `
